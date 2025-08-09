@@ -1,4 +1,6 @@
 ---
+import { Image } from "astro:assets";
+import brain from "../assets/brain.png";
 import R3F from "../components/r3f";
 import "../styles/global.css";
 ---
@@ -11,7 +13,12 @@ import "../styles/global.css";
     <meta name="generator" content={Astro.generator} />
     <title>Astro</title>
   </head>
-  <body class="w-full h-full">
+  <body class="w-full h-full bg-amber-300 flex flex-col">
+    <div
+      class="flex justify-center items-center w-full h-full absolute inset-0 z-[-10]"
+    >
+      <Image class="w-3xl" src={brain} alt="a section of the brain" />
+    </div>
     <R3F client:idle />
   </body>
 </html>
