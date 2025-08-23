@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import React, { useRef, useState } from "react";
 import { Canvas, useFrame, type ThreeElements } from "@react-three/fiber";
+import EEGHead from "./eegHead";
 
 function Box(props: ThreeElements["mesh"]) {
   const meshRef = useRef<THREE.Mesh>(null!);
@@ -35,9 +36,15 @@ const R3F: React.FC = () => {
         intensity={Math.PI}
       />
       <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
-      <Box position={[-1, 0, 0]} />
-      <Box position={[0, 0, 0]} />
-      <Box position={[1, 0, 0]} />
+      <EEGHead
+        position={[0.085, -0.075, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+        scale={Math.PI / 2}
+      />
+      {/* <Model /> */}
+      {/* <Box position={[-1, 0, 0]} /> */}
+      {/* <Box position={[0, 0, 0]} /> */}
+      {/* <Box position={[1, 0, 0]} /> */}
     </Canvas>
   );
 };
