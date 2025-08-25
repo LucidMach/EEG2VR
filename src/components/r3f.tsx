@@ -2,6 +2,7 @@ import * as THREE from "three";
 import React, { useRef, useState } from "react";
 import { Canvas, useFrame, type ThreeElements } from "@react-three/fiber";
 import EEGHead from "./eegHead";
+import { OrbitControls } from "@react-three/drei";
 
 function Box(props: ThreeElements["mesh"]) {
   const meshRef = useRef<THREE.Mesh>(null!);
@@ -26,7 +27,11 @@ function Box(props: ThreeElements["mesh"]) {
 
 const R3F: React.FC = () => {
   return (
-    <Canvas className="w-full h-full">
+    <Canvas
+      className="w-full h-full"
+      shadows
+      camera={{ position: [0, 0, 10], fov: 50 }}
+    >
       <ambientLight intensity={Math.PI / 2} />
       <spotLight
         position={[10, 10, 10]}
@@ -38,13 +43,14 @@ const R3F: React.FC = () => {
       <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
       <EEGHead
         position={[0.085, -0.075, 0]}
-        rotation={[0, Math.PI / 2, 0]}
+        rotation={[0, Math.PI / 2, Math.PI / 4]}
         scale={Math.PI / 2}
       />
       {/* <Model /> */}
       {/* <Box position={[-1, 0, 0]} /> */}
       {/* <Box position={[0, 0, 0]} /> */}
       {/* <Box position={[1, 0, 0]} /> */}
+      <OrbitControls />
     </Canvas>
   );
 };
