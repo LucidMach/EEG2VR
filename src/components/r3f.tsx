@@ -12,6 +12,22 @@ const xrStore = createXRStore({
   depthSensing: false
 });
 
+// SpannedText component to span text letters across parent container width
+interface SpannedTextProps {
+  text: string;
+  className?: string;
+}
+
+const SpannedText: React.FC<SpannedTextProps> = ({ text, className = "" }) => {
+  return (
+    <div className={`flex justify-between w-full font-offbit uppercase tracking-normal select-none ${className}`}>
+      {text.split("").map((char, index) => (
+        <span key={index}>{char === " " ? "\u00A0" : char}</span>
+      ))}
+    </div>
+  );
+};
+
 // Component to dynamically adapt model for 2D vs. VR presentation
 interface HeadWrapperProps {
   channelData: Record<string, any>;
@@ -50,12 +66,21 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
         // Dynamically scale model to occupy exactly 1/3 of the viewport height
         // Model height is approx 22 units in Blender local space.
         const targetScale = state.viewport.height / 66;
-        groupRef.current.scale.setScalar(targetScale);
 
-        // Center the model's Y center (approx Y=11 in Blender space) at the origin
-        groupRef.current.position.set(0, -11 * targetScale, 0);
+        if (activeMode === "idle") {
+          // Slow showcase spin in idle mode
+          groupRef.current.rotation.y = time * 0.15;
+          groupRef.current.rotation.x = Math.PI / 32;
 
-        // Do not modify rotation here so OrbitControls can rotate it freely without snapping back!
+          // Stationary position (no bobbing motion)
+          groupRef.current.position.set(0, -14 * targetScale, 0);
+          groupRef.current.scale.setScalar(targetScale * 1.1);
+        } else {
+          groupRef.current.scale.setScalar(targetScale);
+          groupRef.current.position.set(0, -14 * targetScale, 0);
+          groupRef.current.rotation.y = 0;
+          groupRef.current.rotation.x = Math.PI / 32;
+        }
       }
     }
   });
@@ -455,15 +480,38 @@ const R3F: React.FC = () => {
           </div>
         )}
 
+        {/* Layer 1: Solid Text Behind the Headset */}
+        {appState === 'idle' && (
+          <div className="absolute top-8 md:top-12 lg:top-16 left-0 right-0 z-0 pointer-events-none select-none px-6 md:px-12 lg:px-16">
+            <div className="flex flex-col items-stretch w-full">
+              <div className="animate-fade-in" style={{ animationDelay: "0.4s" }}>
+                <SpannedText text="an MNET experience" className="text-slate-900 text-sm sm:text-base md:text-lg lg:text-xl font-bold" />
+              </div>
+              <h1 className="flex justify-between w-full text-[13vw] font-black uppercase leading-none text-slate-900">
+                {"BrainXR".split("").map((char, index) => (
+                  <span
+                    key={index}
+                    className="inline-block animate-slide-down"
+                    style={{ animationDelay: `${index * 0.06}s` }}
+                  >
+                    {char}
+                  </span>
+                ))}
+              </h1>
+            </div>
+          </div>
+        )}
+
         {/* 3D R3F Canvas */}
-        <div className="w-full h-full">
+        <div className="w-full h-full z-10">
           <Canvas
             shadows
             camera={{ position: [0, 0, 7.5], fov: 45 }}
-            style={{ background: "white" }}
+            style={{ background: appState === 'idle' ? "transparent" : "white" }}
+            gl={{ alpha: true }}
           >
-            {/* White solid environment background */}
-            <color attach="background" args={["#ffffff"]} />
+            {/* White solid environment background when not idle */}
+            {appState !== 'idle' && <color attach="background" args={["#ffffff"]} />}
 
             <ambientLight intensity={Math.PI / 1.5} />
             <directionalLight
@@ -495,11 +543,33 @@ const R3F: React.FC = () => {
           </Canvas>
         </div>
 
+        {/* Layer 3: Outline Text In Front of the Headset */}
+        {appState === 'idle' && (
+          <div className="absolute top-8 md:top-12 lg:top-16 left-0 right-0 z-20 pointer-events-none select-none px-6 md:px-12 lg:px-16">
+            <div className="flex flex-col items-stretch w-full">
+              <div className="animate-fade-in" style={{ animationDelay: "0.4s" }}>
+                <SpannedText text="an MNET experience" className="text-transparent text-stroke-slate text-sm sm:text-base md:text-lg lg:text-xl font-bold" />
+              </div>
+              <h1 className="flex justify-between w-full text-[13vw] font-black uppercase leading-none text-transparent text-stroke-slate">
+                {"BrainXR".split("").map((char, index) => (
+                  <span
+                    key={index}
+                    className="inline-block animate-slide-down"
+                    style={{ animationDelay: `${index * 0.06}s` }}
+                  >
+                    {char}
+                  </span>
+                ))}
+              </h1>
+            </div>
+          </div>
+        )}
+
         {/* ======================================================== */}
         {/* HOMEPAGE IDLE INTERFACE                                  */}
         {/* ======================================================== */}
         {appState === 'idle' && (
-          <div className="absolute inset-x-0 bottom-6 flex flex-col items-center justify-center z-10 px-6">
+          <div className="absolute inset-x-0 bottom-6 flex flex-col items-center justify-center z-30 px-6">
             <div className="backdrop-blur-md">
 
               <div className="flex flex-col gap-2">
