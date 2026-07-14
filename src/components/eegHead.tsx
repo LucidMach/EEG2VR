@@ -85,15 +85,15 @@ const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
         const material = mesh.material as THREE.MeshStandardMaterial;
         if (!material) return;
 
-        let targetColor = new THREE.Color("#000000");
+        let targetColor = new THREE.Color("#1e293b");
         let targetIntensity = 0.0;
-        let targetOpacity = 0.0; // Transparent by default!
+        let targetOpacity = 0.8; // Default to slate-800 with 0.8 opacity
 
         if (activeMode === "idle") {
-          // Transparent in idle
-          targetColor.set("#000000");
+          // Set to slate-800 in idle
+          targetColor.set("#1e293b");
           targetIntensity = 0.0;
-          targetOpacity = 0.32;
+          targetOpacity = 0.4;
         } else if (channelData && channelData[chName]) {
           const ch = channelData[chName];
 
@@ -177,12 +177,13 @@ const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
           }}
         >
           <meshStandardMaterial
+            color="#1e293b"
             roughness={0.15}
             metalness={0.1}
             emissive={new THREE.Color("#000000")}
             emissiveIntensity={0.0}
             transparent
-            opacity={0.0}
+            opacity={0.8}
           />
         </mesh>
       );

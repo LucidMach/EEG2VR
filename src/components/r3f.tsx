@@ -70,14 +70,14 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
         if (activeMode === "idle") {
           // Slow showcase spin in idle mode
           groupRef.current.rotation.y = time * 0.15;
-          groupRef.current.rotation.x = Math.PI / 32;
+          groupRef.current.rotation.x = Math.sin(time * 0.4) * 0.05 + Math.PI / 32;
 
-          // Stationary position (no bobbing motion)
-          groupRef.current.position.set(0, -14 * targetScale, 0);
+          // Subtle bobbing motion
+          groupRef.current.position.set(0, -11 * targetScale - Math.cos(time * 1.2) * 0.2, 0);
           groupRef.current.scale.setScalar(targetScale * 1.1);
         } else {
           groupRef.current.scale.setScalar(targetScale);
-          groupRef.current.position.set(0, -14 * targetScale, 0);
+          groupRef.current.position.set(0, -11 * targetScale, 0);
           groupRef.current.rotation.y = 0;
           groupRef.current.rotation.x = Math.PI / 32;
         }
@@ -482,20 +482,12 @@ const R3F: React.FC = () => {
 
         {/* Layer 1: Solid Text Behind the Headset */}
         {appState === 'idle' && (
-          <div className="absolute top-8 md:top-12 lg:top-16 left-0 right-0 z-0 pointer-events-none select-none px-6 md:px-12 lg:px-16">
+          <div className="absolute top-12 md:top-16 left-0 right-0 z-0 pointer-events-none select-none px-6 md:px-12 lg:px-16">
             <div className="flex flex-col items-stretch w-full">
-              <div className="animate-fade-in" style={{ animationDelay: "0.4s" }}>
-                <SpannedText text="an MNET experience" className="text-slate-900 text-sm sm:text-base md:text-lg lg:text-xl font-bold" />
-              </div>
+              <SpannedText text="an MNET experience" className="text-slate-900 text-sm sm:text-base md:text-lg lg:text-xl font-bold" />
               <h1 className="flex justify-between w-full text-[13vw] font-black uppercase leading-none text-slate-900">
                 {"BrainXR".split("").map((char, index) => (
-                  <span
-                    key={index}
-                    className="inline-block animate-slide-down"
-                    style={{ animationDelay: `${index * 0.06}s` }}
-                  >
-                    {char}
-                  </span>
+                  <span key={index}>{char}</span>
                 ))}
               </h1>
             </div>
@@ -545,20 +537,12 @@ const R3F: React.FC = () => {
 
         {/* Layer 3: Outline Text In Front of the Headset */}
         {appState === 'idle' && (
-          <div className="absolute top-8 md:top-12 lg:top-16 left-0 right-0 z-20 pointer-events-none select-none px-6 md:px-12 lg:px-16">
+          <div className="absolute top-12 md:top-16 left-0 right-0 z-20 pointer-events-none select-none px-6 md:px-12 lg:px-16">
             <div className="flex flex-col items-stretch w-full">
-              <div className="animate-fade-in" style={{ animationDelay: "0.4s" }}>
-                <SpannedText text="an MNET experience" className="text-transparent text-stroke-slate text-sm sm:text-base md:text-lg lg:text-xl font-bold" />
-              </div>
+              <SpannedText text="an MNET experience" className="text-transparent text-stroke-slate text-sm sm:text-base md:text-lg lg:text-xl font-bold" />
               <h1 className="flex justify-between w-full text-[13vw] font-black uppercase leading-none text-transparent text-stroke-slate">
                 {"BrainXR".split("").map((char, index) => (
-                  <span
-                    key={index}
-                    className="inline-block animate-slide-down"
-                    style={{ animationDelay: `${index * 0.06}s` }}
-                  >
-                    {char}
-                  </span>
+                  <span key={index}>{char}</span>
                 ))}
               </h1>
             </div>
