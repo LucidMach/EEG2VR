@@ -1,6 +1,4 @@
 ---
-import { Image } from "astro:assets";
-import brain from "../assets/brain.png";
 import R3F from "../components/r3f";
 import "../styles/global.css";
 ---
@@ -20,6 +18,6 @@ import "../styles/global.css";
     >
       <!-- <Image class="w-3xl" src={brain} alt="a section of the brain" /> -->
     </div>
-    <R3F client:idle />
+    <R3F client:only="react" />
   </body>
 </html>
