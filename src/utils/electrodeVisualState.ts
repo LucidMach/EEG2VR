@@ -2,7 +2,7 @@
 // should look. Pulled out of eegHead.tsx's useFrame callback so it's testable
 // without mounting a Canvas — call it with fixed inputs and assert the output.
 import * as THREE from "three";
-import type { ElectrodeName, Frame } from "./signalSource";
+import { ELECTRODE_METADATA, type ElectrodeName, type Frame } from "./signalSource";
 
 export interface ElectrodeVisualState {
   color: THREE.Color;
@@ -18,11 +18,19 @@ const QUALITY_COLOR: Record<"good" | "fair" | "poor", string> = {
   poor: "#ff3333",
 };
 
-function qualityCheckState(quality: "good" | "fair" | "poor", time: number): ElectrodeVisualState {
+const REGION_COLOR: Record<string, string> = {
+  Frontal: "#6366f1",   // Indigo
+  Temporal: "#a855f7",  // Purple
+  Central: "#3b82f6",   // Blue
+  Parietal: "#06b6d4",   // Cyan
+  Occipital: "#10b981", // Emerald
+};
+
+function qualityCheckState(quality: "good" | "fair" | "poor", time: number, value: number): ElectrodeVisualState {
   const color = new THREE.Color(QUALITY_COLOR[quality]);
 
   if (quality === "good") {
-    return { color, intensity: 1.0, opacity: 0.8 };
+    return { color, intensity: Math.abs(value), opacity: 0.8 };
   }
 
   const blinkHz = quality === "fair" ? 18 : 36;
@@ -39,13 +47,16 @@ function qualityCheckState(quality: "good" | "fair" | "poor", time: number): Ele
   };
 }
 
-function stimulusState(value: number, time: number): ElectrodeVisualState {
+function stimulusState(electrodeName: ElectrodeName, value: number, time: number): ElectrodeVisualState {
   const amp = Math.abs(value);
   const normalized = Math.min(amp, 1.0);
   const pulse = Math.sin(time * 12) * 0.35 + 1.25;
   const intensity = Math.max((0.15 + normalized * 1.85) * 1.5, 1.5) * pulse;
 
-  return { color: new THREE.Color(STIMULUS_COLOR), intensity, opacity: 1.0 };
+  const region = ELECTRODE_METADATA[electrodeName]?.region;
+  const colorHex = REGION_COLOR[region] || STIMULUS_COLOR;
+
+  return { color: new THREE.Color(colorHex), intensity, opacity: 1.0 };
 }
 
 export function computeElectrodeVisualState(
@@ -60,8 +71,8 @@ export function computeElectrodeVisualState(
   }
 
   if (frame.phase === "quality-check") {
-    return qualityCheckState(sample.quality ?? "good", time);
+    return qualityCheckState(sample.quality ?? "good", time, sample.value);
   }
 
-  return stimulusState(sample.value, time);
+  return stimulusState(electrodeName, sample.value, time);
 }

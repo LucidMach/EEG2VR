@@ -19,11 +19,9 @@ const Scene: React.FC<SceneProps> = ({ frame, selectedChannel, onChannelSelect, 
   <Canvas
     shadows
     camera={{ position: [0, 0, 7.5], fov: 45 }}
-    style={{ background: isIdle ? "transparent" : "white" }}
+    style={{ background: "transparent" }}
     gl={{ alpha: true }}
   >
-    {/* White solid environment background when not idle */}
-    {!isIdle && <color attach="background" args={["#ffffff"]} />}
 
     <ambientLight intensity={Math.PI / 1.5} />
     <directionalLight
