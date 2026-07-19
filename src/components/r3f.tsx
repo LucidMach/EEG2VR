@@ -237,7 +237,7 @@ const TrialProgressBar: React.FC<TrialProgressBarProps> = ({
   return (
     <div className="flex flex-col gap-2 w-full text-slate-800">
       {/* 40 Connected Trials: Circle (Baseline) -> Bar (Stimulation) */}
-      <div className="flex justify-between items-center w-full gap-0 select-none">
+      <div className="flex justify-between items-center w-full gap-[2px] select-none">
         {Array.from({ length: 40 }).map((_, i) => {
           const isPast = i < trialIndex;
           const isActive = i === trialIndex;
@@ -247,11 +247,18 @@ const TrialProgressBar: React.FC<TrialProgressBarProps> = ({
           const stimulusPercentage = (stimulusProgress / 60) * 100;
 
           return (
-            <React.Fragment key={i}>
+            <div
+              key={i}
+              className={`flex items-center min-w-0 transition-all duration-500 ease-in-out ${
+                isActive
+                  ? "flex-[10] min-w-[70px] md:min-w-[100px] gap-1"
+                  : "flex-[1] min-w-[10px]"
+              }`}
+            >
               {/* Baseline Circle (3 seconds) */}
               <button
                 onClick={() => onTrialSelect(i, 0)}
-                className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all duration-300 relative cursor-pointer ${
+                className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all duration-300 relative cursor-pointer z-10 ${
                   isActive && phase === "baseline"
                     ? "border-2 border-indigo-600 bg-white scale-125 shadow-sm"
                     : isPast || (isActive && phase === "stimulus")
@@ -268,17 +275,23 @@ const TrialProgressBar: React.FC<TrialProgressBarProps> = ({
               {/* Connecting Bar / Stimulation (60 seconds) */}
               <button
                 onClick={() => onTrialSelect(i, 3)}
-                className="flex-grow h-[3px] relative bg-slate-200 hover:bg-slate-300 cursor-pointer min-w-[6px] mx-[1px]"
+                className={`flex-grow h-[3px] relative cursor-pointer min-w-0 transition-all duration-300 rounded-[1px] ${
+                  isActive
+                    ? "bg-slate-200 hover:bg-slate-300"
+                    : isPast
+                    ? "bg-emerald-500"
+                    : "bg-slate-200/50"
+                }`}
                 title={`Trial ${i + 1} - Stimulation (60s)`}
               >
-                <div
-                  className={`absolute left-0 top-0 bottom-0 transition-all duration-100 ease-out ${
-                    isPast ? "bg-emerald-500 w-full" : isActive && phase === "emerald-500" || isActive && phase === "stimulus" ? "bg-emerald-500" : "w-0"
-                  }`}
-                  style={{ width: isActive && phase === "stimulus" ? `${stimulusPercentage}%` : undefined }}
-                />
+                {isActive && (
+                  <div
+                    className="absolute left-0 top-0 bottom-0 bg-emerald-500 transition-all duration-100 ease-out"
+                    style={{ width: `${stimulusPercentage}%` }}
+                  />
+                )}
               </button>
-            </React.Fragment>
+            </div>
           );
         })}
       </div>
@@ -726,6 +739,7 @@ const R3F: React.FC = () => {
                     valueHistory={valueHistory}
                     color={graphColorForPhase(currentFrame.phase)}
                     label={activeMetadata.name}
+                    isNormalized={currentFrame.phase === 'baseline' || currentFrame.phase === 'stimulus'}
                   />
                 </div>
 

@@ -41,7 +41,7 @@ function qualityCheckState(quality: "good" | "fair" | "poor", time: number): Ele
 
 function stimulusState(value: number, time: number): ElectrodeVisualState {
   const amp = Math.abs(value);
-  const normalized = Math.min(amp / 30.0, 1.0);
+  const normalized = Math.min(amp, 1.0);
   const pulse = Math.sin(time * 12) * 0.35 + 1.25;
   const intensity = Math.max((0.15 + normalized * 1.85) * 1.5, 1.5) * pulse;
 
