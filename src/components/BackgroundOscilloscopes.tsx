@@ -51,8 +51,11 @@ const BackgroundOscilloscopes: React.FC<BackgroundOscilloscopesProps> = ({
     ctx.clearRect(0, 0, width, height);
 
     const numElectrodes = ELECTRODE_NAMES.length;
-    // Divide screen height by 21 to give each electrode its own horizontal lane
-    const laneHeight = height / numElectrodes;
+    // Add vertical padding to prevent signal lines from overlapping with top/bottom HUD elements
+    const paddingTop = 72; // Room for top header controls
+    const paddingBottom = 96; // Room for bottom timeline controls
+    const usableHeight = Math.max(100, height - paddingTop - paddingBottom);
+    const laneHeight = usableHeight / numElectrodes;
 
     const paddingLeft = 56; // Room for names label at left margin
     const drawWidth = width - paddingLeft - 16; // Add a right margin buffer
@@ -86,8 +89,8 @@ const BackgroundOscilloscopes: React.FC<BackgroundOscilloscopesProps> = ({
       const chanHistory = histories[name] || [];
       const isSelected = name === selectedChannel;
 
-      // Vertical center line of this electrode's lane
-      const centerY = (idx + 0.5) * laneHeight;
+      // Vertical center line of this electrode's lane, shifted by paddingTop
+      const centerY = paddingTop + (idx + 0.5) * laneHeight;
 
       // 1. Draw subtle horizontal grid line representing electrode baseline (0 uV)
       ctx.beginPath();
