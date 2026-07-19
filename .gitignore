@@ -22,3 +22,9 @@ pnpm-debug.log*
 
 # blender
 *.blend1
+
+# claude
+.claude/
+.agents/
+skills-lock.json
+CONTEXT.md

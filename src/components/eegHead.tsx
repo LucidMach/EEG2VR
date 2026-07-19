@@ -3,6 +3,8 @@ import React, { useRef, forwardRef, type JSX } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import type { GLTF } from "three-stdlib";
+import type { ElectrodeName, Frame } from "../utils/signalSource";
+import { computeElectrodeVisualState } from "../utils/electrodeVisualState";
 
 type GLTFResult = GLTF & {
   nodes: {
@@ -56,19 +58,17 @@ type GLTFResult = GLTF & {
 };
 
 interface EEGHeadProps extends React.ComponentPropsWithoutRef<"group"> {
-  channelData?: Record<string, any>;
-  selectedChannel?: string | null;
-  onChannelSelect?: (channelName: string) => void;
-  activeMode?: 'idle' | 'delta' | 'theta' | 'alpha' | 'beta' | 'gamma' | 'quality' | 'normal';
+  frame: Frame;
+  selectedChannel?: ElectrodeName | null;
+  onChannelSelect?: (channelName: ElectrodeName) => void;
 }
 
 const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
   (
     {
-      channelData,
+      frame,
       selectedChannel,
       onChannelSelect,
-      activeMode = "idle",
       ...props
     },
     ref
@@ -85,68 +85,19 @@ const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
         const material = mesh.material as THREE.MeshStandardMaterial;
         if (!material) return;
 
-        let targetColor = new THREE.Color("#1e293b");
-        let targetIntensity = 0.0;
-        let targetOpacity = 0.8; // Default to slate-800 with 0.8 opacity
-
-        if (activeMode === "idle") {
-          // Set to slate-800 in idle
-          targetColor.set("#1e293b");
-          targetIntensity = 0.0;
-          targetOpacity = 0.4;
-        } else if (channelData && channelData[chName]) {
-          const ch = channelData[chName];
-
-          if (activeMode === "quality") {
-            // Connection Quality check mode
-            if (ch.quality === "good") {
-              targetColor.set("#00ff66");
-              targetIntensity = 1.0;
-              targetOpacity = 0.8;
-            } else if (ch.quality === "fair") {
-              targetColor.set("#ffb700");
-              const blink = Math.sin(time * 18) > 0 ? 1.0 : 0.15;
-              targetIntensity = blink;
-              targetOpacity = blink > 0.5 ? 0.8 : 0.1;
-            } else {
-              // 'poor' / disconnected
-              targetColor.set("#ff3333");
-              const blink = Math.sin(time * 36) > 0 ? 1.3 : 0.1;
-              targetIntensity = blink;
-              targetOpacity = blink > 0.5 ? 0.9 : 0.05;
-            }
-          } else {
-            // Normal / Brainwave frequency band modes
-            if (activeMode === "delta") targetColor.set("#0055ff");
-            else if (activeMode === "theta") targetColor.set("#00f0ff");
-            else if (activeMode === "alpha") targetColor.set("#00ff55");
-            else if (activeMode === "beta") targetColor.set("#ffb700");
-            else if (activeMode === "gamma") targetColor.set("#ff00aa");
-            else targetColor.set("#00ff55");
-
-            const amp = Math.abs(ch.value);
-            const normalized = Math.min(amp / 30.0, 1.0);
-            targetIntensity = 0.15 + normalized * 1.85;
-            targetOpacity = 0.2 + normalized * 0.8;
-          }
-
-          // Apply selected pulsing state to all active sensors
-          const pulse = Math.sin(time * 12) * 0.35 + 1.25;
-          targetIntensity = Math.max(targetIntensity * 1.5, 1.5) * pulse;
-          targetOpacity = 1.0;
-        }
+        const target = computeElectrodeVisualState(frame, chName as ElectrodeName, time);
 
         // Smoothly lerp color, intensity, and opacity
-        material.color.lerp(targetColor, 0.2);
-        material.emissive.lerp(targetColor, 0.2);
+        material.color.lerp(target.color, 0.2);
+        material.emissive.lerp(target.color, 0.2);
         material.emissiveIntensity = THREE.MathUtils.lerp(
           material.emissiveIntensity,
-          targetIntensity,
+          target.intensity,
           0.2
         );
         material.opacity = THREE.MathUtils.lerp(
           material.opacity,
-          targetOpacity,
+          target.opacity,
           0.2
         );
       });
@@ -154,7 +105,7 @@ const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
 
     // Helper to render interactive LED nodes
     const renderNode = (
-      name: string,
+      name: ElectrodeName,
       nodeMesh: THREE.Mesh,
       pos: [number, number, number],
       rot: [number, number, number]
