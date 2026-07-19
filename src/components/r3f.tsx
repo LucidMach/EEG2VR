@@ -211,6 +211,8 @@ interface TrialProgressBarProps {
   trialElapsed: number; // 0 to 63
   phase: Frame["phase"];
   trialIndex: number;
+  playbackSpeed: number;
+  onSpeedChange: (speed: number) => void;
   onTrialSelect: (index: number, startOffset?: number) => void;
 }
 
@@ -218,6 +220,8 @@ const TrialProgressBar: React.FC<TrialProgressBarProps> = ({
   trialElapsed,
   phase,
   trialIndex,
+  playbackSpeed,
+  onSpeedChange,
   onTrialSelect,
 }) => {
   const totalDuration = 63;
@@ -279,7 +283,7 @@ const TrialProgressBar: React.FC<TrialProgressBarProps> = ({
         })}
       </div>
 
-      {/* Sub-label showing current trial details and time readout */}
+      {/* Sub-label showing current trial details, speed controller, and time readout */}
       <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold select-none mt-1">
         <div className="flex items-center gap-2">
           <span className="font-mono text-slate-800 font-bold">
@@ -295,8 +299,29 @@ const TrialProgressBar: React.FC<TrialProgressBarProps> = ({
             {phase === "baseline" ? "Baseline Phase" : "Stimulation Phase"}
           </span>
         </div>
-        <div className="font-mono text-slate-700">
-          {formatTime(trialElapsed)} / {formatTime(totalDuration)}
+
+        {/* Speed Selector and Timer */}
+        <div className="flex items-center gap-3">
+          {/* Speed Selector Pill buttons */}
+          <div className="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+            {[1, 2, 5, 10].map((speed) => (
+              <button
+                key={speed}
+                onClick={() => onSpeedChange(speed)}
+                className={`px-2 py-0.5 rounded-[5px] text-[9px] font-bold transition-all duration-150 cursor-pointer ${
+                  playbackSpeed === speed
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-200"
+                }`}
+              >
+                {speed}x
+              </button>
+            ))}
+          </div>
+
+          <div className="font-mono text-slate-700">
+            {formatTime(trialElapsed)} / {formatTime(totalDuration)}
+          </div>
         </div>
       </div>
     </div>
@@ -324,6 +349,9 @@ const R3F: React.FC = () => {
   const [valueHistory, setValueHistory] = useState<number[]>([]);
   const historyLimit = 120;
 
+  // Playback speed multiplier (1x, 2x, 5x, 10x)
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+
   // Elapsed playback clock for whichever SignalSource is currently active
   const timeRef = useRef<number>(0);
   const signalSourceRef = useRef<SignalSource>(idleSignalSource);
@@ -337,6 +365,7 @@ const R3F: React.FC = () => {
   // playback always restarts from trial 0 / baseline.
   useEffect(() => {
     timeRef.current = 0;
+    setPlaybackSpeed(1); // Reset speed to 1x on mode switch
 
     if (appState === 'idle') {
       signalSourceRef.current = idleSignalSource;
@@ -352,7 +381,7 @@ const R3F: React.FC = () => {
   // whether that's the procedural generator or the DEAP-playback adapter.
   useEffect(() => {
     const timer = setInterval(() => {
-      timeRef.current += 0.05;
+      timeRef.current += 0.05 * playbackSpeed;
       const frame = signalSourceRef.current.getFrame(timeRef.current);
       setCurrentFrame(frame);
 
@@ -369,7 +398,7 @@ const R3F: React.FC = () => {
     }, 50);
 
     return () => clearInterval(timer);
-  }, [selectedChannel]);
+  }, [selectedChannel, playbackSpeed]);
 
   // Clean value history when switching channel or restarting a mode
   useEffect(() => {
@@ -649,6 +678,8 @@ const R3F: React.FC = () => {
                 trialElapsed={currentFrame.trialElapsed ?? 0}
                 phase={currentFrame.phase}
                 trialIndex={currentFrame.trialIndex ?? 0}
+                playbackSpeed={playbackSpeed}
+                onSpeedChange={setPlaybackSpeed}
                 onTrialSelect={handleTrialSelect}
               />
             </div>
