@@ -77,7 +77,7 @@ const R3F: React.FC = () => {
             </div>
 
             {/* Phase HUD (Centered) */}
-            <div className="pointer-events-auto flex justify-center flex-1 max-w-[180px] sm:max-w-none">
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto flex justify-center">
               {engine.mode.kind === "demo" && (
                 <div className="flex items-center gap-1.5 md:gap-2 bg-slate-900/90 border border-slate-700/50 backdrop-blur-md px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-2xl transition-all duration-300">
                   <span className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${engine.frame.phase === "baseline"

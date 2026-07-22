@@ -53,20 +53,20 @@ const TrialProgressBar: React.FC<TrialProgressBarProps> = ({
               {/* Baseline Circle (3 seconds) */}
               <button
                 onClick={() => onTrialSelect(i, 0)}
-                className={`rounded-full shrink-0 transition-all duration-300 relative cursor-pointer z-10 ${
+                className={`rounded-full shrink-0 transition-[width,height,border-color,box-shadow] duration-300 relative cursor-pointer z-10 ${
                   isActive
                     ? "w-4 h-4 shadow-md " +
                       (phase === "baseline"
-                        ? "border-2 border-indigo-600 bg-white"
+                        ? "border-2 border-indigo-600 bg-slate-950/95"
                         : "bg-indigo-600 border border-indigo-500")
                     : isPast
                       ? "w-2.5 h-2.5 bg-indigo-600 border border-indigo-500 shadow-sm"
-                      : "w-2.5 h-2.5 bg-slate-200 border border-slate-300"
+                      : "w-2.5 h-2.5 bg-slate-950/95 border border-slate-800/80"
                 }`}
                 style={
                   isActive && phase === "baseline"
                     ? {
-                        background: `linear-gradient(to right, #4f46e5 ${baselinePercentage}%, #ffffff ${baselinePercentage}%)`,
+                        background: `linear-gradient(to right, #4f46e5 ${baselinePercentage}%, rgba(2, 6, 23, 0.95) ${baselinePercentage}%)`,
                       }
                     : undefined
                 }
@@ -76,15 +76,15 @@ const TrialProgressBar: React.FC<TrialProgressBarProps> = ({
                   <span className="absolute inset-[-4px] rounded-full bg-indigo-500/30 animate-pulse" />
                 )}
               </button>
-
+ 
               {/* Connecting Bar / Stimulation (60 seconds) */}
               <button
                 onClick={() => onTrialSelect(i, 3)}
                 className={`flex-grow relative cursor-pointer min-w-0 transition-all duration-300 rounded-full ${isActive
-                  ? "h-2 bg-slate-200 hover:bg-slate-300"
+                  ? "h-2 bg-slate-950/95 hover:bg-slate-900"
                   : "h-[3px] " + (isPast
                     ? "bg-emerald-500"
-                    : "bg-slate-200/50")
+                    : "bg-slate-950/50")
                   }`}
                 title={`Trial ${i + 1} - Stimulation (60s)`}
               >
