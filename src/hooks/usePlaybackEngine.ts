@@ -55,6 +55,8 @@ export function usePlaybackEngine(): PlaybackEngine {
   const timeRef = useRef<number>(0);
   const sourceRef = useRef<SignalSource>(idleSignalSource);
   const cancelConnectionRef = useRef<() => void>(() => {});
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioHasErrorRef = useRef<boolean>(false);
 
   // Swap the active SignalSource whenever the mode changes, and restart the
   // elapsed-time clock so playback always begins from trial 0 / baseline.
@@ -109,8 +111,91 @@ export function usePlaybackEngine(): PlaybackEngine {
     return () => clearInterval(timer);
   }, [speed, isPaused]);
 
+  // Sync audio playback with demo trials
+  useEffect(() => {
+    if (mode.kind !== "demo") {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      audioHasErrorRef.current = false;
+      return;
+    }
+
+    if (frame.trialIndex === undefined) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      return;
+    }
+
+    const trialNumStr = String(frame.trialIndex + 1).padStart(2, "0");
+    const expectedSrc = `/audio/video-${trialNumStr}.m4a`;
+
+    if (!audioRef.current) {
+      audioRef.current = new Audio(expectedSrc);
+      audioHasErrorRef.current = false;
+    } else if (audioRef.current.src && !audioRef.current.src.endsWith(expectedSrc)) {
+      audioRef.current.pause();
+      audioRef.current.src = expectedSrc;
+      audioHasErrorRef.current = false;
+      audioRef.current.load();
+    }
+
+    const audio = audioRef.current;
+
+    // Monitor loading errors
+    audio.onerror = () => {
+      audioHasErrorRef.current = true;
+      audio.pause();
+    };
+
+    // Handle speed/playback rate & muting
+    audio.playbackRate = speed;
+    audio.muted = speed === 10;
+
+    if (frame.phase === "stimulus") {
+      const targetTime = (frame.trialElapsed ?? 3) - 3;
+      
+      // Sync time if drifted too far (and audio is ready)
+      if (audio.readyState >= 1 && Math.abs(audio.currentTime - targetTime) > 0.3) {
+        audio.currentTime = targetTime;
+      }
+
+      if (isPaused || audioHasErrorRef.current) {
+        if (!audio.paused) {
+          audio.pause();
+        }
+      } else {
+        if (audio.paused) {
+          audio.play().catch((err) => {
+            console.log("Audio autoplay / play failed or was blocked by browser:", err);
+          });
+        }
+      }
+    } else {
+      // Baseline or other non-stimulus phase: pause and keep playhead at beginning
+      if (!audio.paused) {
+        audio.pause();
+      }
+      if (audio.currentTime !== 0) {
+        audio.currentTime = 0;
+      }
+    }
+  }, [mode.kind, isPaused, speed, frame.trialIndex, frame.phase, frame.trialElapsed]);
+
   // Cancel any pending mock-connection timers on unmount.
   useEffect(() => () => cancelConnectionRef.current(), []);
+
+  // Clean up audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const selectTrial = useCallback((index: number, startOffset = 0) => {
     timeRef.current = index * TRIAL_SECONDS + startOffset;
