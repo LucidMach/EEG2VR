@@ -39,6 +39,9 @@ export interface Frame {
   stimulusId?: string;
   ratings?: TrialRatings;
   trialElapsed?: number; // seconds elapsed in the current trial
+  focus?: number;        // current second's focus index (0-1)
+  focus_avg?: number;    // average focus for the trial
+  totalTrials?: number;  // total number of trials in the signal source
 }
 
 export interface SignalSource {

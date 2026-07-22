@@ -1,0 +1,13 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Top Face (Off-white/Light gray) -->
+  <polygon points="50,5 89,27.5 69.5,38.75 50,27.5 30.5,38.75 11,27.5" fill="#EEEEEE" stroke="#000000" stroke-width="1.5" stroke-linejoin="round" />
+  
+  <!-- Left-Bottom Face (Off-white/Light gray) -->
+  <polygon points="11,27.5 30.5,38.75 30.5,61.25 50,72.5 50,95 11,72.5" fill="#EEEEEE" stroke="#000000" stroke-width="1.5" stroke-linejoin="round" />
+  
+  <!-- Right-Bottom Face (Off-white/Light gray) -->
+  <polygon points="89,27.5 69.5,38.75 69.5,61.25 50,72.5 50,95 89,72.5" fill="#EEEEEE" stroke="#000000" stroke-width="1.5" stroke-linejoin="round" />
+  
+  <!-- Center Hexagon (Solid black cutout representation) -->
+  <polygon points="50,27.5 69.5,38.75 69.5,61.25 50,72.5 30.5,61.25 30.5,38.75" fill="#000000" stroke="#000000" stroke-width="1.5" stroke-linejoin="round" />
+</svg>

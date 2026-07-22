@@ -7,6 +7,7 @@ import { IdleHeadline, IdleActions } from "./IdleSplash";
 import Scene from "./Scene";
 import TrialProgressBar from "./TrialProgressBar";
 import BackgroundOscilloscopes from "./BackgroundOscilloscopes";
+import TrialDial from "./TrialDial";
 
 const R3F: React.FC = () => {
   const engine = usePlaybackEngine();
@@ -167,18 +168,33 @@ const R3F: React.FC = () => {
 
 
 
-        {/* DEMO MODE FLOATING BOTTOM TIMELINE */}
+        {/* DEMO MODE FLOATING BOTTOM TIMELINE & DIAL */}
         {engine.mode.kind === "demo" && (
-          <div className="absolute inset-x-0 bottom-6 flex flex-col items-center justify-center z-30 px-8 pointer-events-none">
-            <div className="w-full max-w-3xl pointer-events-auto">
-              <TrialProgressBar
-                trialElapsed={engine.frame.trialElapsed ?? 0}
-                phase={engine.frame.phase}
+          <>
+            {/* FLOATING BOTTOM TIMELINE */}
+            <div className="absolute inset-x-0 bottom-6 flex flex-col items-center justify-center z-30 pl-8 pr-56 md:px-8 pointer-events-none">
+              <div className="w-full max-w-3xl pointer-events-auto">
+                <TrialProgressBar
+                  trialElapsed={engine.frame.trialElapsed ?? 0}
+                  phase={engine.frame.phase}
+                  trialIndex={engine.frame.trialIndex ?? 0}
+                  onTrialSelect={engine.selectTrial}
+                />
+              </div>
+            </div>
+
+            {/* FLOATING DIAL CONTROL (Bottom Right) */}
+            <div className="absolute right-6 bottom-6 z-30 pointer-events-auto">
+              <TrialDial
                 trialIndex={engine.frame.trialIndex ?? 0}
+                totalTrials={40}
+                phase={engine.frame.phase}
+                trialElapsed={engine.frame.trialElapsed ?? 0}
+                focus={engine.frame.focus}
                 onTrialSelect={engine.selectTrial}
               />
             </div>
-          </div>
+          </>
         )}
       </div>
 

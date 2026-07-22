@@ -17,6 +17,8 @@ interface DeapTrialAsset {
   stimulusId: string;
   channels: Record<string, number[]>;
   ratings: TrialRatings;
+  focus?: number[];
+  focus_avg?: number;
 }
 
 interface DeapSessionAsset {
@@ -28,6 +30,8 @@ interface LoadedTrial {
   stimulusId: string;
   ratings: TrialRatings;
   channels: Partial<Record<ElectrodeName, number[]>>;
+  focus?: number[];
+  focus_avg?: number;
 }
 
 function filterToMappedElectrodes(channels: Record<string, number[]>): Partial<Record<ElectrodeName, number[]>> {
@@ -54,6 +58,8 @@ export function createDeapSignalSource(assetUrl = "/deap/participant-07.json"): 
         stimulusId: trial.stimulusId,
         ratings: trial.ratings,
         channels: filterToMappedElectrodes(trial.channels),
+        focus: trial.focus,
+        focus_avg: trial.focus_avg,
       }));
     });
 
@@ -64,7 +70,9 @@ export function createDeapSignalSource(assetUrl = "/deap/participant-07.json"): 
         return { phase: "idle", channels: {} };
       }
 
-      const trialIndex = Math.floor(elapsedSeconds / TRIAL_SECONDS) % trials.length;
+      // Support 40 trials on the UI (wraps around indices to actual loaded trials)
+      const unwrappedTrialIndex = Math.floor(elapsedSeconds / TRIAL_SECONDS) % 40;
+      const trialIndex = unwrappedTrialIndex % trials.length;
       const trialElapsed = elapsedSeconds % TRIAL_SECONDS;
       const trial = trials[trialIndex];
       const phase = trialElapsed < BASELINE_SECONDS ? "baseline" : "stimulus";
@@ -82,10 +90,13 @@ export function createDeapSignalSource(assetUrl = "/deap/participant-07.json"): 
       return {
         phase,
         channels,
-        trialIndex,
+        trialIndex: unwrappedTrialIndex,
         stimulusId: trial.stimulusId,
         ratings: trial.ratings,
         trialElapsed,
+        focus: trial.focus ? trial.focus[Math.floor(trialElapsed)] : undefined,
+        focus_avg: trial.focus_avg,
+        totalTrials: 40,
       };
     },
   };

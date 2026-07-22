@@ -67,6 +67,18 @@ const XRConsole: React.FC<XRConsoleProps> = ({ frame, selectedChannel, currentVa
         </Text>
       )}
 
+      {frame.phase === "stimulus" && frame.focus !== undefined && (
+        <Text
+          position={[0, 0.02, 0.015]}
+          fontSize={0.011}
+          color="#10b981"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {`Focus ${Math.round(frame.focus * 100)}%  Avg ${Math.round((frame.focus_avg ?? 0) * 100)}%`}
+        </Text>
+      )}
+
       {/* Sensor Monitor Box */}
       <group position={[0, -0.05, 0.015]}>
         <mesh>
