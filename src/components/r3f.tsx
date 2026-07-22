@@ -191,6 +191,7 @@ const R3F: React.FC = () => {
                 phase={engine.frame.phase}
                 trialElapsed={engine.frame.trialElapsed ?? 0}
                 focus={engine.frame.focus}
+                focus_avg={engine.frame.focus_avg}
                 onTrialSelect={engine.selectTrial}
               />
             </div>

@@ -7,6 +7,7 @@ interface TrialDialProps {
   phase: Frame["phase"];
   trialElapsed: number;
   focus?: number;
+  focus_avg?: number;
   onTrialSelect: (index: number) => void;
 }
 
@@ -15,6 +16,7 @@ const TrialDial: React.FC<TrialDialProps> = ({
   phase,
   trialElapsed,
   focus,
+  focus_avg,
   onTrialSelect,
 }) => {
   const knobRef = useRef<HTMLDivElement>(null);
@@ -137,8 +139,8 @@ const TrialDial: React.FC<TrialDialProps> = ({
 
   const activeThemeColor = phase === "baseline" ? "text-indigo-400" : "text-emerald-400";
   const activeGlowColor = phase === "baseline"
-    ? "shadow-[0_0_20px_rgba(99,102,241,0.6)] border-indigo-500/60"
-    : "shadow-[0_0_20px_rgba(16,185,129,0.6)] border-emerald-500/60";
+    ? "shadow-xl border-indigo-500/60"
+    : "shadow-xl border-emerald-500/60";
 
   const isMilestone = (i: number) => i === 0 || i === 9 || i === 19 || i === 29 || i === 39;
   const getMilestoneLabel = (i: number) => {
@@ -185,24 +187,44 @@ const TrialDial: React.FC<TrialDialProps> = ({
           })}
         </svg>
 
-        {/* Rotary Knob Button */}
+        {/* Rotary Knob Button (Rotates based on active trial angle) */}
         <div
           ref={knobRef}
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
           onWheel={handleWheel}
-          className={`w-30 h-30 rounded-full relative bg-slate-950/95 border-2 flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 ${isDragging ? activeGlowColor : "border-slate-800/80 hover:border-slate-700 shadow-xl"
+          className={`w-30 h-30 rounded-full relative bg-slate-950/95 border-2 flex items-center justify-center cursor-pointer active:scale-95 transition-all duration-300 ${isDragging ? activeGlowColor : "border-slate-800/80 hover:border-slate-700 shadow-xl"
             }`}
+          style={{
+            transform: `rotate(${activeAngle}deg)`,
+            transition: isDragging
+              ? "none"
+              : "transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.3s, box-shadow 0.3s, scale 0.3s",
+          }}
           title="Drag to rotate, scroll, or click labels to switch trials"
         >
           {/* Inside Border indicating current trial phase */}
           <div
-            className={`absolute inset-1.5 rounded-full border transition-all duration-300 pointer-events-none ${
-              phase === "baseline"
-                ? "border-indigo-400 shadow-[inset_0_0_10px_rgba(99,102,241,0.5),0_0_10px_rgba(99,102,241,0.3)]"
-                : "border-emerald-400 shadow-[inset_0_0_10px_rgba(16,185,129,0.5),0_0_10px_rgba(16,185,129,0.3)]"
-            }`}
+            className={`absolute inset-1.5 rounded-full border transition-all duration-300 pointer-events-none ${phase === "baseline"
+              ? "border-indigo-400"
+              : "border-emerald-400"
+              }`}
           />
+
+          {/* Active pointer triangle at the top of the rotating knob */}
+          <svg
+            className={`absolute inset-0 w-full h-full pointer-events-none transition-all duration-300 ${phase === "baseline"
+              ? "text-indigo-400 drop-shadow-[0_0_3px_rgba(99,102,241,0.8)]"
+              : "text-emerald-400 drop-shadow-[0_0_3px_rgba(16,185,129,0.8)]"
+              }`}
+            viewBox="0 0 100 100"
+            fill="none"
+          >
+            <polygon
+              points="50,0 47.5,6 52.5,6"
+              fill="currentColor"
+            />
+          </svg>
 
           {/* Embedded Watermark Translucent LucidMach SVG Logo */}
           <svg className="absolute inset-3 w-16 h-16 pointer-events-none opacity-[0.08]" viewBox="0 0 100 100" fill="none">
@@ -239,22 +261,25 @@ const TrialDial: React.FC<TrialDialProps> = ({
               strokeLinejoin="round"
             />
           </svg>
+        </div>
 
-          {/* Central Digital Readout: Focus Metric Percentage */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-10">
-            <span className={`${phase === "baseline"
-              ? "text-indigo-400 drop-shadow-[0_0_6px_rgba(99,102,241,0.6)]"
-              : "text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.6)]"
-              }`}>
-              <span className="text-4xl font-mono font-black mt-1 tracking-wider transition-all duration-300" >
-                {currentFocus !== null ? `${(currentFocus * 100).toFixed(0)}` : "--%"}
-              </span>
-              <span className="text-xs">%</span>
+        {/* Central Digital Readout: Focus Metric & Active Trial Readout (Static, does not rotate) */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-30">
+          <span className={`${phase === "baseline"
+            ? "text-indigo-400 drop-shadow-[0_0_6px_rgba(99,102,241,0.6)]"
+            : "text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.6)]"
+            }`}>
+            <span className="text-3xl font-mono font-black tracking-wider transition-all duration-300" >
+              {currentFocus !== null ? `${(currentFocus * 100).toFixed(0)}` : "--"}
             </span>
-            <span className="text-xs font-black tracking-[0.25em] text-slate-500 uppercase">
-              FOCUS
-            </span>
-          </div>
+            <span className="text-xs font-bold">%</span>
+          </span>
+          <span className="text-xs font-black tracking-[0.25em] text-slate-500 uppercase mt-0.5">
+            FOCUS
+          </span>
+          <span className="text-[6px] font-mono font-bold tracking-wider text-slate-400 mt-0.5">
+            [AVG: {focus_avg !== undefined && focus_avg !== null ? `${Math.round(focus_avg * 100)}%` : "--"}]
+          </span>
         </div>
 
         {/* Milestone Labels (01, 10, 20, 30, 40) */}
@@ -274,8 +299,10 @@ const TrialDial: React.FC<TrialDialProps> = ({
             <button
               key={i}
               onClick={() => onTrialSelect(i)}
-              className={`absolute text-[9px] font-mono font-black -translate-x-1/2 -translate-y-1/2 cursor-pointer z-25 transition-all duration-300 w-6 h-6 flex items-center justify-center rounded-full hover:bg-slate-800/40 hover:text-white ${isTextActive
-                ? (phase === "baseline" ? "text-indigo-400 font-extrabold" : "text-emerald-400 font-extrabold")
+              className={`absolute text-[9px] font-mono font-black -translate-x-1/2 -translate-y-1/2 cursor-pointer z-25 transition-all duration-300 w-6 h-6 flex items-center justify-center rounded-full ${isTextActive
+                ? phase === "baseline"
+                  ? "text-indigo-400 scale-110"
+                  : "text-emerald-400 scale-110"
                 : "text-slate-500 hover:text-slate-300"
                 }`}
               style={{ left: `${x}%`, top: `${y}%` }}
