@@ -1,13 +1,21 @@
+// Dynamically adapts the digital twin's position/scale/rotation for 2D vs.
+// WebXR presentation, and hosts the floating XR console alongside it.
+//
+// Frame data arrives via a ref so this subtree can be memoized upstream and
+// stay off the 20 Hz React re-render path — the useFrame loop reads the latest
+// frame each three.js frame.
 import * as THREE from "three";
 import React, { useRef } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import EEGHead from "./eegHead";
-import XRConsole from "./XRConsole";
+import XRHUD from "./XRHUD";
 import type { ElectrodeName, Frame } from "../utils/signalSource";
+import type { HistorySample } from "../hooks/usePlaybackEngine";
 import type { AppMode } from "../utils/appMode";
 
 interface HeadWrapperProps {
   frameRef: React.RefObject<Frame>;
+  historiesRef: React.RefObject<Record<ElectrodeName, HistorySample[]>>;
   selectedChannel: ElectrodeName | null;
   onChannelSelect: (name: ElectrodeName) => void;
   mode: AppMode;
@@ -15,14 +23,15 @@ interface HeadWrapperProps {
   speed: number;
   togglePlayPause: () => void;
   setSpeed: (speed: number) => void;
+  disconnect: () => void;
+  selectTrial: (index: number, startOffset?: number) => void;
   startDemo: () => void;
   startLive: () => void;
-  disconnect: () => void;
-  selectTrial: (index: number) => void;
 }
 
 const HeadWrapper: React.FC<HeadWrapperProps> = ({
   frameRef,
+  historiesRef,
   selectedChannel,
   onChannelSelect,
   mode,
@@ -30,10 +39,10 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
   speed,
   togglePlayPause,
   setSpeed,
-  startDemo,
-  startLive,
   disconnect,
   selectTrial,
+  startDemo,
+  startLive,
 }) => {
   const { gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
@@ -111,8 +120,13 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
     if (groupRef.current) {
       if (isPresenting) {
         // --- WebXR VR/AR Presentation Layout ---
-        // Position at eye level, roughly 1.1 meters in front of the camera
-        groupRef.current.position.set(0, 1.3, -1.1);
+        // Smooth gaze-following position for the headset: float 1.1 meters in front of the camera
+        const cam = state.camera;
+        const targetPos = new THREE.Vector3(0, 0, -1.1);
+        targetPos.applyQuaternion(cam.quaternion);
+        targetPos.add(cam.position);
+
+        groupRef.current.position.lerp(targetPos, 0.08); // smooth elastic position follow
 
         // Reset rotation to identity (facing the camera/forward) on transition to XR
         if (!wasPresentingRef.current) {
@@ -170,19 +184,21 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
           rotation={[Math.PI / 32, 0, 0]}
         />
       </group>
-      {/* Render 3D Floating Console in WebXR Mode only */}
-      <XRConsole
+      {/* Render 3D Floating heads-up workspace controls in WebXR */}
+      <XRHUD
         frameRef={frameRef}
+        historiesRef={historiesRef}
         selectedChannel={selectedChannel}
+        onChannelSelect={onChannelSelect}
         mode={mode}
         isPaused={isPaused}
         speed={speed}
         togglePlayPause={togglePlayPause}
         setSpeed={setSpeed}
-        startDemo={startDemo}
-        startLive={startLive}
         disconnect={disconnect}
         selectTrial={selectTrial}
+        startDemo={startDemo}
+        startLive={startLive}
       />
     </group>
   );

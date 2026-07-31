@@ -1,21 +1,17 @@
+// Floating 3D control board, shown only while presenting in WebXR.
+//
+// Reads the live frame from a ref (its parent subtree is memoized off the
+// React tick) and republishes just the values it displays into local state,
+// and only while actually presenting in XR — so the 2D showcase path never
+// re-renders this at all.
 import React, { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import type { ElectrodeName, Frame } from "../utils/signalSource";
-import type { AppMode } from "../utils/appMode";
 
 interface XRConsoleProps {
   frameRef: React.RefObject<Frame>;
   selectedChannel: ElectrodeName | null;
-  mode: AppMode;
-  isPaused: boolean;
-  speed: number;
-  togglePlayPause: () => void;
-  setSpeed: (speed: number) => void;
-  startDemo: () => void;
-  startLive: () => void;
-  disconnect: () => void;
-  selectTrial: (index: number) => void;
 }
 
 interface ConsoleSnapshot {
@@ -37,100 +33,7 @@ const EMPTY_SNAPSHOT: ConsoleSnapshot = {
   currentValue: 0,
 };
 
-interface XRButtonProps {
-  position: [number, number, number];
-  args: [number, number, number]; // width, height, depth
-  label: string;
-  onClick: () => void;
-  color?: string;
-  hoverColor?: string;
-  labelColor?: string;
-  fontSize?: number;
-}
-
-const XRButton: React.FC<XRButtonProps> = ({
-  position,
-  args,
-  label,
-  onClick,
-  color = "#1e293b",
-  hoverColor = "#312e81",
-  labelColor = "#ffffff",
-  fontSize = 0.011,
-}) => {
-  const [hovered, setHovered] = useState(false);
-  const [pressed, setPressed] = useState(false);
-
-  // Press feedback (moves back slightly along the Z-axis)
-  const buttonZOffset = pressed ? -0.004 : 0;
-  const currentPos: [number, number, number] = [
-    position[0],
-    position[1],
-    position[2] + buttonZOffset
-  ];
-
-  return (
-    <group
-      position={currentPos}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        setHovered(true);
-      }}
-      onPointerOut={(e) => {
-        e.stopPropagation();
-        setHovered(false);
-        setPressed(false);
-      }}
-      onPointerDown={(e) => {
-        e.stopPropagation();
-        setPressed(true);
-      }}
-      onPointerUp={(e) => {
-        e.stopPropagation();
-        if (pressed) {
-          onClick();
-        }
-        setPressed(false);
-      }}
-    >
-      {/* Visual Button Mesh */}
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={args} />
-        <meshStandardMaterial
-          color={hovered ? hoverColor : color}
-          roughness={0.2}
-          metalness={0.6}
-        />
-      </mesh>
-
-      {/* Button Text */}
-      <Text
-        position={[0, 0, args[2] / 2 + 0.001]}
-        fontSize={fontSize}
-        color={labelColor}
-        anchorX="center"
-        anchorY="middle"
-        font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
-      >
-        {label}
-      </Text>
-    </group>
-  );
-};
-
-const XRConsole: React.FC<XRConsoleProps> = ({
-  frameRef,
-  selectedChannel,
-  mode,
-  isPaused,
-  speed,
-  togglePlayPause,
-  setSpeed,
-  startDemo,
-  startLive,
-  disconnect,
-  selectTrial,
-}) => {
+const XRConsole: React.FC<XRConsoleProps> = ({ frameRef, selectedChannel }) => {
   const [snapshot, setSnapshot] = useState<ConsoleSnapshot>(EMPTY_SNAPSHOT);
   const sigRef = useRef<string>("");
 
@@ -174,244 +77,97 @@ const XRConsole: React.FC<XRConsoleProps> = ({
     }
   });
 
-  if (!snapshot.inVR) return null;
+  if (!snapshot.inVR || snapshot.phase === "idle") return null;
 
   const contextLabel =
     snapshot.phase === "quality-check"
       ? "Monitoring Signal Quality"
       : `Trial ${snapshot.trialIndex + 1} · ${snapshot.phase === "baseline" ? "Baseline" : "Stimulus"}`;
 
-  // Theme colors for active states (matching web UI colors)
-  const isBaseline = snapshot.phase === "baseline";
-  const glowColor = isBaseline ? "#6366f1" : "#10b981"; // Indigo vs Emerald
-  const activeColor = isBaseline ? "#4f46e5" : "#059669";
-  const hoverColor = isBaseline ? "#4338ca" : "#047857";
-
   return (
-    <group position={[0.55, 1.2, -0.9]} rotation={[0, -Math.PI / 6, 0]}>
-      {/* Dark Obsidian Glass Plate */}
+    <group position={[0.55, 1.1, -0.9]} rotation={[0, -Math.PI / 6, 0]}>
+      {/* Console Plate */}
       <mesh castShadow receiveShadow>
-        <boxGeometry args={[0.55, 0.52, 0.015]} />
-        <meshStandardMaterial
-          color="#0b0f19"
-          roughness={0.1}
-          metalness={0.8}
-          transparent
-          opacity={0.85}
-        />
+        <boxGeometry args={[0.5, 0.42, 0.02]} />
+        <meshStandardMaterial color="#ffffff" roughness={0.15} metalness={0.1} />
       </mesh>
 
-      {/* Dynamic Glowing Neon Border Backplate */}
-      <mesh position={[0, 0, -0.009]}>
-        <boxGeometry args={[0.56, 0.53, 0.004]} />
-        <meshStandardMaterial
-          color={snapshot.phase === "idle" ? "#334155" : glowColor}
-          emissive={snapshot.phase === "idle" ? "#334155" : glowColor}
-          emissiveIntensity={1.5}
-        />
-      </mesh>
+      {/* Title */}
+      <Text
+        position={[0, 0.16, 0.015]}
+        fontSize={0.022}
+        color="#0f172a"
+        anchorX="center"
+        anchorY="middle"
+        font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
+      >
+        EEG DIGITAL TWIN
+      </Text>
 
-      {/* ======================================================== */}
-      {/* 1. IDLE/MAIN MENU VIEW                                   */}
-      {/* ======================================================== */}
-      {snapshot.phase === "idle" ? (
-        <>
-          {/* Header */}
-          <Text
-            position={[0, 0.16, 0.01]}
-            fontSize={0.026}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-            font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
-          >
-            BRAINXR DASHBOARD
-          </Text>
-          <Text
-            position={[0, 0.10, 0.01]}
-            fontSize={0.013}
-            color="#94a3b8"
-            anchorX="center"
-            anchorY="middle"
-          >
-            Digital Twin Control Center
-          </Text>
-          <Text
-            position={[0, 0.02, 0.01]}
-            fontSize={0.011}
-            color="#cbd5e1"
-            anchorX="center"
-            anchorY="middle"
-          >
-            Choose a mode to begin:
-          </Text>
+      {/* Context readout: current trial/phase, or connection-quality status */}
+      <Text
+        position={[0, 0.1, 0.015]}
+        fontSize={0.014}
+        color="#4f46e5"
+        anchorX="center"
+        anchorY="middle"
+      >
+        {contextLabel}
+      </Text>
 
-          {/* Action Buttons */}
-          <XRButton
-            position={[0, -0.05, 0.01]}
-            args={[0.32, 0.05, 0.015]}
-            label="Run Demo Mode"
-            color="#1e293b"
-            hoverColor="#4f46e5"
-            onClick={startDemo}
-            fontSize={0.013}
-          />
-          <XRButton
-            position={[0, -0.13, 0.01]}
-            args={[0.32, 0.05, 0.015]}
-            label="Connect EEG Headset"
-            color="#1e293b"
-            hoverColor="#10b981"
-            onClick={startLive}
-            fontSize={0.013}
-          />
-        </>
-      ) : (
-        // ========================================================
-        // 2. ACTIVE TRIAL / PLAYBACK VIEW                          
-        // ========================================================
-        <>
-          {/* Title */}
-          <Text
-            position={[0, 0.20, 0.01]}
-            fontSize={0.022}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-            font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
-          >
-            EEG DIGITAL TWIN
-          </Text>
-
-          {/* Status read-out */}
-          <Text
-            position={[0, 0.15, 0.01]}
-            fontSize={0.013}
-            color={glowColor}
-            anchorX="center"
-            anchorY="middle"
-          >
-            {contextLabel}
-          </Text>
-
-          {/* Real-time emotional / focus metrics */}
-          {snapshot.phase === "stimulus" && (
-            <>
-              {snapshot.valence !== undefined && snapshot.arousal !== undefined && (
-                <Text
-                  position={[0, 0.10, 0.01]}
-                  fontSize={0.012}
-                  color="#cbd5e1"
-                  anchorX="center"
-                  anchorY="middle"
-                >
-                  {`Valence: ${snapshot.valence.toFixed(1)}   ·   Arousal: ${snapshot.arousal.toFixed(1)}`}
-                </Text>
-              )}
-              {snapshot.focus !== undefined && (
-                <Text
-                  position={[0, 0.06, 0.01]}
-                  fontSize={0.012}
-                  color="#10b981"
-                  anchorX="center"
-                  anchorY="middle"
-                >
-                  {`Focus: ${Math.round(snapshot.focus * 100)}%   ·   Average: ${Math.round(snapshot.focusAvg * 100)}%`}
-                </Text>
-              )}
-            </>
-          )}
-
-          {/* Sensor description / inspection box */}
-          <group position={[0, -0.03, 0.01]}>
-            <mesh>
-              <boxGeometry args={[0.46, 0.075, 0.01]} />
-              <meshStandardMaterial color="#0f172a" roughness={0.2} />
-            </mesh>
-            <Text
-              position={[0, 0.014, 0.006]}
-              fontSize={0.013}
-              color="#cbd5e1"
-              anchorX="center"
-              anchorY="middle"
-            >
-              {selectedChannel ? `Electrode: ${selectedChannel}` : "Point/Click LED to Inspect"}
-            </Text>
-            <Text
-              position={[0, -0.012, 0.006]}
-              fontSize={0.011}
-              color="#94a3b8"
-              anchorX="center"
-              anchorY="middle"
-            >
-              {selectedChannel ? `Value: ${snapshot.currentValue.toFixed(2)} µV` : "No Channel Selected"}
-            </Text>
-          </group>
-
-          {/* Controls Separator */}
-          <Text
-            position={[0, -0.11, 0.01]}
-            fontSize={0.009}
-            color="#64748b"
-            anchorX="center"
-            anchorY="middle"
-            font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
-          >
-            PLAYBACK CONTROLS
-          </Text>
-
-          {/* Buttons Row */}
-          {/* Exit Button */}
-          <XRButton
-            position={[-0.18, -0.18, 0.01]}
-            args={[0.08, 0.04, 0.01]}
-            label="Exit"
-            color="#334155"
-            hoverColor="#ef4444"
-            onClick={disconnect}
-          />
-
-          {/* Previous Trial */}
-          <XRButton
-            position={[-0.09, -0.18, 0.01]}
-            args={[0.06, 0.04, 0.01]}
-            label="Prev"
-            color="#1e293b"
-            hoverColor={hoverColor}
-            onClick={() => selectTrial(Math.max(0, snapshot.trialIndex - 1))}
-          />
-
-          {/* Play/Pause */}
-          <XRButton
-            position={[0.0, -0.18, 0.01]}
-            args={[0.10, 0.04, 0.01]}
-            label={isPaused ? "Play" : "Pause"}
-            color="#1e293b"
-            hoverColor={hoverColor}
-            onClick={togglePlayPause}
-          />
-
-          {/* Next Trial */}
-          <XRButton
-            position={[0.09, -0.18, 0.01]}
-            args={[0.06, 0.04, 0.01]}
-            label="Next"
-            color="#1e293b"
-            hoverColor={hoverColor}
-            onClick={() => selectTrial(Math.min(39, snapshot.trialIndex + 1))}
-          />
-
-          {/* Speed (1x / 10x) */}
-          <XRButton
-            position={[0.18, -0.18, 0.01]}
-            args={[0.08, 0.04, 0.01]}
-            label={speed === 1 ? "10x" : "1x"}
-            color="#1e293b"
-            hoverColor={hoverColor}
-            onClick={() => setSpeed(speed === 1 ? 10 : 1)}
-          />
-        </>
+      {snapshot.phase === "stimulus" && snapshot.valence !== undefined && snapshot.arousal !== undefined && (
+        <Text
+          position={[0, 0.06, 0.015]}
+          fontSize={0.011}
+          color="#64748b"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {`Valence ${snapshot.valence.toFixed(1)}  Arousal ${snapshot.arousal.toFixed(1)}`}
+        </Text>
       )}
+
+      {snapshot.phase === "stimulus" && snapshot.focus !== undefined && (
+        <Text
+          position={[0, 0.02, 0.015]}
+          fontSize={0.011}
+          color="#10b981"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {`Focus ${Math.round(snapshot.focus * 100)}%  Avg ${Math.round(snapshot.focusAvg * 100)}%`}
+        </Text>
+      )}
+
+      {/* Sensor Monitor Box */}
+      <group position={[0, -0.05, 0.015]}>
+        <mesh>
+          <boxGeometry args={[0.42, 0.07, 0.012]} />
+          <meshStandardMaterial color="#f8fafc" roughness={0.15} />
+        </mesh>
+        <Text
+          position={[0, 0.01, 0.007]}
+          fontSize={0.014}
+          color="#475569"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {selectedChannel
+            ? `Electrode: ${selectedChannel}`
+            : "Point/Click LED to Inspect"}
+        </Text>
+        <Text
+          position={[0, -0.012, 0.007]}
+          fontSize={0.012}
+          color="#64748b"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {selectedChannel
+            ? `Value: ${snapshot.currentValue.toFixed(2)} uV`
+            : "No Channel Selected"}
+        </Text>
+      </group>
     </group>
   );
 };
