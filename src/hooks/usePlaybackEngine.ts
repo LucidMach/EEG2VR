@@ -36,6 +36,7 @@ export interface PlaybackEngine {
   startLive: () => void;
   disconnect: () => void;
   selectTrial: (index: number, startOffset?: number) => void;
+  audioError: boolean;
 }
 
 export function usePlaybackEngine(): PlaybackEngine {
@@ -51,6 +52,7 @@ export function usePlaybackEngine(): PlaybackEngine {
   });
   const [speed, setSpeed] = useState<number>(1);
   const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [audioError, setAudioError] = useState<boolean>(false);
 
   const timeRef = useRef<number>(0);
   const sourceRef = useRef<SignalSource>(idleSignalSource);
@@ -119,6 +121,7 @@ export function usePlaybackEngine(): PlaybackEngine {
         audioRef.current = null;
       }
       audioHasErrorRef.current = false;
+      setAudioError(false);
       return;
     }
 
@@ -135,10 +138,12 @@ export function usePlaybackEngine(): PlaybackEngine {
     if (!audioRef.current) {
       audioRef.current = new Audio(expectedSrc);
       audioHasErrorRef.current = false;
+      setAudioError(false);
     } else if (audioRef.current.src && !audioRef.current.src.endsWith(expectedSrc)) {
       audioRef.current.pause();
       audioRef.current.src = expectedSrc;
       audioHasErrorRef.current = false;
+      setAudioError(false);
       audioRef.current.load();
     }
 
@@ -147,6 +152,7 @@ export function usePlaybackEngine(): PlaybackEngine {
     // Monitor loading errors
     audio.onerror = () => {
       audioHasErrorRef.current = true;
+      setAudioError(true);
       audio.pause();
     };
 
@@ -252,5 +258,6 @@ export function usePlaybackEngine(): PlaybackEngine {
     startLive,
     disconnect,
     selectTrial,
+    audioError,
   };
 }
