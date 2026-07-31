@@ -1,5 +1,10 @@
 // 3D scene composition: Canvas, lighting rig, WebXR wrapper, orbit controls,
 // and the digital twin itself.
+//
+// Reads the live frame through a ref and is wrapped in React.memo: the 20 Hz
+// playback tick updates the HUD via state without re-rendering (and having
+// three.js reconcile) this whole subtree. The head animates off its own
+// useFrame loop reading frameRef.current.
 import React from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
@@ -9,13 +14,12 @@ import { xrStore } from "../utils/xrStore";
 import type { ElectrodeName, Frame } from "../utils/signalSource";
 
 interface SceneProps {
-  frame: Frame;
+  frameRef: React.RefObject<Frame>;
   selectedChannel: ElectrodeName | null;
   onChannelSelect: (name: ElectrodeName) => void;
-  isIdle: boolean;
 }
 
-const Scene: React.FC<SceneProps> = ({ frame, selectedChannel, onChannelSelect, isIdle }) => (
+const Scene: React.FC<SceneProps> = ({ frameRef, selectedChannel, onChannelSelect }) => (
   <Canvas
     shadows
     camera={{ position: [0, 0, 7.5], fov: 45 }}
@@ -34,7 +38,7 @@ const Scene: React.FC<SceneProps> = ({ frame, selectedChannel, onChannelSelect, 
     <pointLight position={[0, -10, 0]} intensity={Math.PI / 2} />
 
     <XR store={xrStore}>
-      <HeadWrapper frame={frame} selectedChannel={selectedChannel} onChannelSelect={onChannelSelect} />
+      <HeadWrapper frameRef={frameRef} selectedChannel={selectedChannel} onChannelSelect={onChannelSelect} />
     </XR>
 
     <OrbitControls
@@ -47,4 +51,4 @@ const Scene: React.FC<SceneProps> = ({ frame, selectedChannel, onChannelSelect, 
   </Canvas>
 );
 
-export default Scene;
+export default React.memo(Scene);

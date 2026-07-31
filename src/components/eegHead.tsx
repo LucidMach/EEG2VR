@@ -58,7 +58,7 @@ type GLTFResult = GLTF & {
 };
 
 interface EEGHeadProps extends React.ComponentPropsWithoutRef<"group"> {
-  frame: Frame;
+  frameRef: React.RefObject<Frame>;
   selectedChannel?: ElectrodeName | null;
   onChannelSelect?: (channelName: ElectrodeName) => void;
 }
@@ -66,7 +66,7 @@ interface EEGHeadProps extends React.ComponentPropsWithoutRef<"group"> {
 const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
   (
     {
-      frame,
+      frameRef,
       selectedChannel,
       onChannelSelect,
       ...props
@@ -78,6 +78,7 @@ const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
 
     useFrame((state) => {
       const time = state.clock.getElapsedTime();
+      const frame = frameRef.current;
 
       Object.entries(meshRefs.current).forEach(([chName, mesh]) => {
         if (!mesh) return;

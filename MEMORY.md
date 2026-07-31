@@ -1,0 +1,1 @@
+- [Project stage](project-stage.md) — showcase/MVP: favor experience over data-fidelity; 3-trials-as-40 and per-index audio are intentional

@@ -39,7 +39,7 @@ const R3F: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col md:flex-row relative bg-white overflow-hidden text-slate-800 font-sans">
-      <BackgroundOscilloscopes histories={engine.histories} selectedChannel={engine.selectedChannel} phase={engine.frame.phase} />
+      <BackgroundOscilloscopes historiesRef={engine.historiesRef} frameRef={engine.frameRef} selectedChannel={engine.selectedChannel} />
 
       {/* ======================================================== */}
       {/* 3D VIEWPORT: CENTER SECTION                             */}
@@ -167,12 +167,21 @@ const R3F: React.FC = () => {
         {/* 3D R3F Canvas */}
         <div className="w-full h-full z-10">
           <Scene
-            frame={engine.frame}
+            frameRef={engine.frameRef}
             selectedChannel={engine.selectedChannel}
             onChannelSelect={engine.selectChannel}
-            isIdle={isIdle}
           />
         </div>
+
+        {/* Loading overlay while the DEAP session asset fetches/parses */}
+        {engine.isLoading && (
+          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-4 pointer-events-none">
+            <div className="w-10 h-10 rounded-full border-2 border-slate-300 border-t-indigo-500 animate-spin" />
+            <span className="text-[10px] md:text-xs font-black tracking-[0.2em] uppercase text-slate-500">
+              Loading session…
+            </span>
+          </div>
+        )}
 
         {/* Layer 3: Outline Text In Front of the Headset */}
         {isIdle && <IdleHeadline variant="outline" />}

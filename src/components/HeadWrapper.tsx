@@ -1,5 +1,9 @@
 // Dynamically adapts the digital twin's position/scale/rotation for 2D vs.
 // WebXR presentation, and hosts the floating XR console alongside it.
+//
+// Frame data arrives via a ref so this subtree can be memoized upstream and
+// stay off the 20 Hz React re-render path — the useFrame loop reads the latest
+// frame each three.js frame.
 import * as THREE from "three";
 import React, { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
@@ -8,18 +12,18 @@ import XRConsole from "./XRConsole";
 import type { ElectrodeName, Frame } from "../utils/signalSource";
 
 interface HeadWrapperProps {
-  frame: Frame;
+  frameRef: React.RefObject<Frame>;
   selectedChannel: ElectrodeName | null;
   onChannelSelect: (name: ElectrodeName) => void;
 }
 
-const HeadWrapper: React.FC<HeadWrapperProps> = ({ frame, selectedChannel, onChannelSelect }) => {
+const HeadWrapper: React.FC<HeadWrapperProps> = ({ frameRef, selectedChannel, onChannelSelect }) => {
   const groupRef = useRef<THREE.Group>(null);
-  const isIdleShowcase = frame.phase === "idle";
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
     const isPresenting = state.gl.xr.isPresenting;
+    const isIdleShowcase = frameRef.current.phase === "idle";
 
     if (groupRef.current) {
       if (isPresenting) {
@@ -56,28 +60,17 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({ frame, selectedChannel, onCha
     }
   });
 
-  const getSelectedChannelValue = () => {
-    if (selectedChannel && frame.channels[selectedChannel]) {
-      return frame.channels[selectedChannel]!.value;
-    }
-    return 0;
-  };
-
   return (
     <group>
       <EEGHead
         ref={groupRef}
-        frame={frame}
+        frameRef={frameRef}
         selectedChannel={selectedChannel}
         onChannelSelect={onChannelSelect}
         rotation={[Math.PI / 32, 0, 0]}
       />
       {/* Render 3D Floating Console in WebXR Mode only */}
-      <XRConsole
-        frame={frame}
-        selectedChannel={selectedChannel}
-        currentValue={getSelectedChannelValue()}
-      />
+      <XRConsole frameRef={frameRef} selectedChannel={selectedChannel} />
     </group>
   );
 };

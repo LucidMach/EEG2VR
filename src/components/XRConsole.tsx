@@ -1,28 +1,88 @@
 // Floating 3D control board, shown only while presenting in WebXR.
-import React, { useState } from "react";
+//
+// Reads the live frame from a ref (its parent subtree is memoized off the
+// React tick) and republishes just the values it displays into local state,
+// and only while actually presenting in XR — so the 2D showcase path never
+// re-renders this at all.
+import React, { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import type { ElectrodeName, Frame } from "../utils/signalSource";
 
 interface XRConsoleProps {
-  frame: Frame;
+  frameRef: React.RefObject<Frame>;
   selectedChannel: ElectrodeName | null;
+}
+
+interface ConsoleSnapshot {
+  inVR: boolean;
+  phase: Frame["phase"];
+  trialIndex: number;
+  valence?: number;
+  arousal?: number;
+  focus?: number;
+  focusAvg: number;
   currentValue: number;
 }
 
-const XRConsole: React.FC<XRConsoleProps> = ({ frame, selectedChannel, currentValue }) => {
-  const [inVR, setInVR] = useState(false);
+const EMPTY_SNAPSHOT: ConsoleSnapshot = {
+  inVR: false,
+  phase: "idle",
+  trialIndex: 0,
+  focusAvg: 0,
+  currentValue: 0,
+};
+
+const XRConsole: React.FC<XRConsoleProps> = ({ frameRef, selectedChannel }) => {
+  const [snapshot, setSnapshot] = useState<ConsoleSnapshot>(EMPTY_SNAPSHOT);
+  const sigRef = useRef<string>("");
 
   useFrame((state) => {
-    setInVR(state.gl.xr.isPresenting);
+    const inVR = state.gl.xr.isPresenting;
+
+    // Off the XR path this console is hidden; skip all work and re-renders.
+    if (!inVR) {
+      if (sigRef.current !== "") {
+        sigRef.current = "";
+        setSnapshot(EMPTY_SNAPSHOT);
+      }
+      return;
+    }
+
+    const frame = frameRef.current;
+    const currentValue =
+      selectedChannel && frame.channels[selectedChannel]
+        ? frame.channels[selectedChannel]!.value
+        : 0;
+
+    const next: ConsoleSnapshot = {
+      inVR: true,
+      phase: frame.phase,
+      trialIndex: frame.trialIndex ?? 0,
+      valence: frame.ratings?.valence,
+      arousal: frame.ratings?.arousal,
+      focus: frame.focus,
+      focusAvg: frame.focus_avg ?? 0,
+      currentValue,
+    };
+
+    // Only re-render when something the panel actually shows changes.
+    const sig = `${next.phase}|${next.trialIndex}|${next.valence}|${next.arousal}|${
+      next.focus === undefined ? "-" : Math.round(next.focus * 100)
+    }|${Math.round(next.focusAvg * 100)}|${currentValue.toFixed(2)}|${selectedChannel ?? "-"}`;
+
+    if (sig !== sigRef.current) {
+      sigRef.current = sig;
+      setSnapshot(next);
+    }
   });
 
-  if (!inVR || frame.phase === "idle") return null;
+  if (!snapshot.inVR || snapshot.phase === "idle") return null;
 
   const contextLabel =
-    frame.phase === "quality-check"
+    snapshot.phase === "quality-check"
       ? "Monitoring Signal Quality"
-      : `Trial ${(frame.trialIndex ?? 0) + 1} · ${frame.phase === "baseline" ? "Baseline" : "Stimulus"}`;
+      : `Trial ${snapshot.trialIndex + 1} · ${snapshot.phase === "baseline" ? "Baseline" : "Stimulus"}`;
 
   return (
     <group position={[0.55, 1.1, -0.9]} rotation={[0, -Math.PI / 6, 0]}>
@@ -55,7 +115,7 @@ const XRConsole: React.FC<XRConsoleProps> = ({ frame, selectedChannel, currentVa
         {contextLabel}
       </Text>
 
-      {frame.phase === "stimulus" && frame.ratings && (
+      {snapshot.phase === "stimulus" && snapshot.valence !== undefined && snapshot.arousal !== undefined && (
         <Text
           position={[0, 0.06, 0.015]}
           fontSize={0.011}
@@ -63,11 +123,11 @@ const XRConsole: React.FC<XRConsoleProps> = ({ frame, selectedChannel, currentVa
           anchorX="center"
           anchorY="middle"
         >
-          {`Valence ${frame.ratings.valence.toFixed(1)}  Arousal ${frame.ratings.arousal.toFixed(1)}`}
+          {`Valence ${snapshot.valence.toFixed(1)}  Arousal ${snapshot.arousal.toFixed(1)}`}
         </Text>
       )}
 
-      {frame.phase === "stimulus" && frame.focus !== undefined && (
+      {snapshot.phase === "stimulus" && snapshot.focus !== undefined && (
         <Text
           position={[0, 0.02, 0.015]}
           fontSize={0.011}
@@ -75,7 +135,7 @@ const XRConsole: React.FC<XRConsoleProps> = ({ frame, selectedChannel, currentVa
           anchorX="center"
           anchorY="middle"
         >
-          {`Focus ${Math.round(frame.focus * 100)}%  Avg ${Math.round((frame.focus_avg ?? 0) * 100)}%`}
+          {`Focus ${Math.round(snapshot.focus * 100)}%  Avg ${Math.round(snapshot.focusAvg * 100)}%`}
         </Text>
       )}
 
@@ -104,7 +164,7 @@ const XRConsole: React.FC<XRConsoleProps> = ({ frame, selectedChannel, currentVa
           anchorY="middle"
         >
           {selectedChannel
-            ? `Value: ${currentValue.toFixed(2)} uV`
+            ? `Value: ${snapshot.currentValue.toFixed(2)} uV`
             : "No Channel Selected"}
         </Text>
       </group>

@@ -3,7 +3,12 @@
 // Pulled out of the render component so this behaviour has an interface that
 // can be exercised without mounting a Canvas — the interface returned below
 // is the test surface.
-import { useCallback, useEffect, useRef, useState } from "react";
+//
+// Performance seam: the 20 Hz data flows to the 3D scene and the background
+// oscilloscope through *refs* (frameRef, historiesRef), not React state, so
+// those high-frequency consumers animate off their own render loops without
+// re-rendering the React tree. Only the DOM HUD reads `frame` state.
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { ELECTRODE_NAMES, type ElectrodeName, type Frame, type SignalSource } from "../utils/signalSource";
 import { idleSignalSource, qualityCheckSignalSource } from "../utils/proceduralSignalSource";
 import { createDeapSignalSource } from "../utils/deapSignalSource";
@@ -21,13 +26,32 @@ export interface HistorySample {
   isBaseline: boolean;
 }
 
+type Histories = Record<ElectrodeName, HistorySample[]>;
+
+function createEmptyHistories(): Histories {
+  const initial: Partial<Histories> = {};
+  ELECTRODE_NAMES.forEach((name) => {
+    initial[name] = [];
+  });
+  return initial as Histories;
+}
+
+// Empties the ring buffers in place, so the ref identity stays stable and
+// consumers keep reading the same object.
+function clearHistories(histories: Histories): void {
+  ELECTRODE_NAMES.forEach((name) => {
+    histories[name].length = 0;
+  });
+}
+
 export interface PlaybackEngine {
   mode: AppMode;
-  frame: Frame;
-  history: number[];
-  histories: Record<ElectrodeName, HistorySample[]>;
+  frame: Frame; // DOM-facing snapshot; updated at the 20 Hz tick for the HUD
+  frameRef: RefObject<Frame>; // live frame for the render loop (no re-render)
+  historiesRef: RefObject<Histories>; // rolling per-electrode ring buffers
   speed: number;
   isPaused: boolean;
+  isLoading: boolean;
   togglePlayPause: () => void;
   selectedChannel: ElectrodeName | null;
   selectChannel: (name: ElectrodeName) => void;
@@ -43,16 +67,10 @@ export function usePlaybackEngine(): PlaybackEngine {
   const [mode, setMode] = useState<AppMode>({ kind: "idle" });
   const [selectedChannel, setSelectedChannel] = useState<ElectrodeName | null>("Cz");
   const [frame, setFrame] = useState<Frame>(INITIAL_FRAME);
-  const [histories, setHistories] = useState<Record<ElectrodeName, HistorySample[]>>(() => {
-    const initial: Partial<Record<ElectrodeName, HistorySample[]>> = {};
-    ELECTRODE_NAMES.forEach((name) => {
-      initial[name] = [];
-    });
-    return initial as Record<ElectrodeName, HistorySample[]>;
-  });
   const [speed, setSpeed] = useState<number>(1);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [audioError, setAudioError] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const timeRef = useRef<number>(0);
   const sourceRef = useRef<SignalSource>(idleSignalSource);
@@ -60,53 +78,69 @@ export function usePlaybackEngine(): PlaybackEngine {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioHasErrorRef = useRef<boolean>(false);
 
+  // High-frequency data channels the 3D scene and oscilloscope read directly.
+  const frameRef = useRef<Frame>(INITIAL_FRAME);
+  const historiesRef = useRef<Histories>(createEmptyHistories());
+  const modeRef = useRef<AppMode>(mode);
+  modeRef.current = mode;
+
   // Swap the active SignalSource whenever the mode changes, and restart the
   // elapsed-time clock so playback always begins from trial 0 / baseline.
   useEffect(() => {
     timeRef.current = 0;
     setSpeed(1);
     setIsPaused(false);
-    setHistories(() => {
-      const initial: Partial<Record<ElectrodeName, HistorySample[]>> = {};
-      ELECTRODE_NAMES.forEach((name) => {
-        initial[name] = [];
-      });
-      return initial as Record<ElectrodeName, HistorySample[]>;
-    });
+    clearHistories(historiesRef.current);
 
     if (mode.kind === "idle") {
       sourceRef.current = idleSignalSource;
+      setIsLoading(false);
     } else if (mode.kind === "demo") {
-      sourceRef.current = createDeapSignalSource();
+      const source = createDeapSignalSource();
+      sourceRef.current = source;
+      // The DEAP asset is a multi-MB fetch; surface a loading state until the
+      // participant's trials have parsed, then let playback take over.
+      setIsLoading(true);
+      let cancelled = false;
+      source.ready.finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+      return () => {
+        cancelled = true;
+      };
     } else if (mode.kind === "live" && mode.connection === "connected") {
       sourceRef.current = qualityCheckSignalSource;
+      setIsLoading(false);
     }
   }, [mode]);
 
   // Single persistent data loop: ask whichever SignalSource is active for the
-  // frame at the current elapsed time. Same call site regardless of whether
-  // that's the procedural generator or the DEAP-playback adapter.
+  // frame at the current elapsed time. Publishes to the refs every tick (for
+  // the render loop) and to `frame` state (for the DOM HUD).
   useEffect(() => {
     if (isPaused) return;
 
     const timer = setInterval(() => {
-      timeRef.current += (FRAME_INTERVAL_MS / 1000) * speed;
-      const nextFrame = sourceRef.current.getFrame(timeRef.current);
+      let nextTime = timeRef.current + (FRAME_INTERVAL_MS / 1000) * speed;
+      if (modeRef.current.kind === "demo") {
+        const maxTime = 40 * TRIAL_SECONDS;
+        if (nextTime >= maxTime) {
+          nextTime = nextTime % maxTime;
+        }
+      }
+      timeRef.current = nextTime;
+      const nextFrame = sourceRef.current.getFrame(nextTime);
+      frameRef.current = nextFrame;
       setFrame(nextFrame);
 
-      setHistories((prev) => {
-        const next = { ...prev };
-        const isBaseline = nextFrame.phase === "baseline";
-        ELECTRODE_NAMES.forEach((name) => {
-          const val = nextFrame.channels[name]?.value ?? 0;
-          const prevChan = prev[name] || [];
-          const chanHistory = [...prevChan, { value: val, isBaseline }];
-          if (chanHistory.length > HISTORY_LIMIT) {
-            chanHistory.shift();
-          }
-          next[name] = chanHistory;
-        });
-        return next;
+      // Mutate the ring buffers in place — no per-tick array/object cloning,
+      // so this doesn't churn the GC or trigger a React re-render.
+      const isBaseline = nextFrame.phase === "baseline";
+      const histories = historiesRef.current;
+      ELECTRODE_NAMES.forEach((name) => {
+        const arr = histories[name];
+        arr.push({ value: nextFrame.channels[name]?.value ?? 0, isBaseline });
+        if (arr.length > HISTORY_LIMIT) arr.shift();
       });
     }, FRAME_INTERVAL_MS);
 
@@ -162,7 +196,7 @@ export function usePlaybackEngine(): PlaybackEngine {
 
     if (frame.phase === "stimulus") {
       const targetTime = (frame.trialElapsed ?? 3) - 3;
-      
+
       // Sync time if drifted too far (and audio is ready)
       if (audio.readyState >= 1 && Math.abs(audio.currentTime - targetTime) > 0.3) {
         audio.currentTime = targetTime;
@@ -205,14 +239,10 @@ export function usePlaybackEngine(): PlaybackEngine {
 
   const selectTrial = useCallback((index: number, startOffset = 0) => {
     timeRef.current = index * TRIAL_SECONDS + startOffset;
-    setHistories(() => {
-      const initial: Partial<Record<ElectrodeName, HistorySample[]>> = {};
-      ELECTRODE_NAMES.forEach((name) => {
-        initial[name] = [];
-      });
-      return initial as Record<ElectrodeName, HistorySample[]>;
-    });
-    setFrame(sourceRef.current.getFrame(timeRef.current));
+    clearHistories(historiesRef.current);
+    const nextFrame = sourceRef.current.getFrame(timeRef.current);
+    frameRef.current = nextFrame;
+    setFrame(nextFrame);
   }, []);
 
   const startDemo = useCallback(() => {
@@ -246,10 +276,11 @@ export function usePlaybackEngine(): PlaybackEngine {
   return {
     mode,
     frame,
-    history: (histories[selectedChannel || "Cz"] || []).map((s) => s.value),
-    histories,
+    frameRef,
+    historiesRef,
     speed,
     isPaused,
+    isLoading,
     togglePlayPause,
     selectedChannel,
     selectChannel: setSelectedChannel,
