@@ -12,14 +12,37 @@ import { XR } from "@react-three/xr";
 import HeadWrapper from "./HeadWrapper";
 import { xrStore } from "../utils/xrStore";
 import type { ElectrodeName, Frame } from "../utils/signalSource";
+import type { AppMode } from "../utils/appMode";
 
 interface SceneProps {
   frameRef: React.RefObject<Frame>;
   selectedChannel: ElectrodeName | null;
   onChannelSelect: (name: ElectrodeName) => void;
+  mode: AppMode;
+  isPaused: boolean;
+  speed: number;
+  togglePlayPause: () => void;
+  setSpeed: (speed: number) => void;
+  startDemo: () => void;
+  startLive: () => void;
+  disconnect: () => void;
+  selectTrial: (index: number) => void;
 }
 
-const Scene: React.FC<SceneProps> = ({ frameRef, selectedChannel, onChannelSelect }) => (
+const Scene: React.FC<SceneProps> = ({
+  frameRef,
+  selectedChannel,
+  onChannelSelect,
+  mode,
+  isPaused,
+  speed,
+  togglePlayPause,
+  setSpeed,
+  startDemo,
+  startLive,
+  disconnect,
+  selectTrial,
+}) => (
   <Canvas
     shadows
     camera={{ position: [0, 0, 7.5], fov: 45 }}
@@ -38,7 +61,20 @@ const Scene: React.FC<SceneProps> = ({ frameRef, selectedChannel, onChannelSelec
     <pointLight position={[0, -10, 0]} intensity={Math.PI / 2} />
 
     <XR store={xrStore}>
-      <HeadWrapper frameRef={frameRef} selectedChannel={selectedChannel} onChannelSelect={onChannelSelect} />
+      <HeadWrapper
+        frameRef={frameRef}
+        selectedChannel={selectedChannel}
+        onChannelSelect={onChannelSelect}
+        mode={mode}
+        isPaused={isPaused}
+        speed={speed}
+        togglePlayPause={togglePlayPause}
+        setSpeed={setSpeed}
+        startDemo={startDemo}
+        startLive={startLive}
+        disconnect={disconnect}
+        selectTrial={selectTrial}
+      />
     </XR>
 
     <OrbitControls
