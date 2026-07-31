@@ -21,15 +21,20 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({ frameRef, selectedChannel, on
   const { gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
 
-  // WebXR Drag-to-Rotate interaction refs
+  // WebXR Drag-to-Rotate and Drag-to-Position interaction refs
   const isDraggingRef = useRef(false);
   const pointerIdRef = useRef<number | null>(null);
+  const dragStartRayOriginRef = useRef<THREE.Vector3>(new THREE.Vector3());
   const dragStartRayDirRef = useRef<THREE.Vector3>(new THREE.Vector3());
+  const dragStartHeadsetPosRef = useRef<THREE.Vector3>(new THREE.Vector3());
   const dragStartQuatRef = useRef<THREE.Quaternion>(new THREE.Quaternion());
+  const dragOffsetRef = useRef<THREE.Vector3>(new THREE.Vector3());
+  const dragDistanceRef = useRef<number>(0);
+  const xrPositionRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 1.3, -1.1));
   const xrRotationRef = useRef<THREE.Quaternion>(new THREE.Quaternion());
   const wasPresentingRef = useRef(false);
 
-  // Pointer event handlers for drag rotation in XR
+  // Pointer event handlers for drag translation and rotation in XR
   const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (!gl.xr.isPresenting) return;
     
@@ -43,10 +48,21 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({ frameRef, selectedChannel, on
     isDraggingRef.current = true;
     pointerIdRef.current = e.pointerId;
 
-    // Save starting controller ray direction and current headset quaternion
+    // Save starting controller ray details and headset transform
+    dragStartRayOriginRef.current.copy(e.ray.origin);
     dragStartRayDirRef.current.copy(e.ray.direction);
     if (groupRef.current) {
+      dragStartHeadsetPosRef.current.copy(groupRef.current.position);
       dragStartQuatRef.current.copy(groupRef.current.quaternion);
+
+      // Compute grab distance and offset vector to prevent snapping
+      const grabDistance = e.ray.origin.distanceTo(groupRef.current.position);
+      dragDistanceRef.current = grabDistance;
+
+      const initialRayPoint = new THREE.Vector3()
+        .copy(e.ray.origin)
+        .addScaledVector(e.ray.direction, grabDistance);
+      dragOffsetRef.current.subVectors(groupRef.current.position, initialRayPoint);
     }
   };
 
@@ -56,13 +72,24 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({ frameRef, selectedChannel, on
     e.stopPropagation();
 
     if (groupRef.current) {
+      const currentRayOrigin = e.ray.origin;
       const currentRayDir = e.ray.direction;
       const qDiff = new THREE.Quaternion();
       
       // Compute short-arc rotation that aligns initial ray direction to current ray direction
       qDiff.setFromUnitVectors(dragStartRayDirRef.current, currentRayDir);
 
-      // Apply the delta rotation to the starting orientation
+      // Update position: currentRayOrigin + currentRayDir * dragDistance + rotatedOffset
+      const rotatedOffset = dragOffsetRef.current.clone().applyQuaternion(qDiff);
+      const newPos = new THREE.Vector3()
+        .copy(currentRayOrigin)
+        .addScaledVector(currentRayDir, dragDistanceRef.current)
+        .add(rotatedOffset);
+      
+      groupRef.current.position.copy(newPos);
+      xrPositionRef.current.copy(newPos);
+
+      // Update rotation
       const newQuat = new THREE.Quaternion().multiplyQuaternions(qDiff, dragStartQuatRef.current);
       groupRef.current.quaternion.copy(newQuat);
       xrRotationRef.current.copy(newQuat);
@@ -81,6 +108,7 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({ frameRef, selectedChannel, on
       pointerIdRef.current = null;
 
       if (groupRef.current) {
+        xrPositionRef.current.copy(groupRef.current.position);
         xrRotationRef.current.copy(groupRef.current.quaternion);
       }
     }
@@ -94,17 +122,16 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({ frameRef, selectedChannel, on
     if (groupRef.current) {
       if (isPresenting) {
         // --- WebXR VR/AR Presentation Layout ---
-        // Position at eye level, roughly 1.1 meters in front of the camera
-        groupRef.current.position.set(0, 1.3, -1.1);
-
-        // Reset rotation to identity (facing the camera/forward) on transition to XR
+        // Reset position and rotation on transition to XR
         if (!wasPresentingRef.current) {
+          xrPositionRef.current.set(0, 1.3, -1.1);
           xrRotationRef.current.set(0, 0, 0, 1);
           wasPresentingRef.current = true;
         }
 
-        // Apply saved XR rotation if not currently dragging
+        // Apply saved XR position and rotation if not currently dragging
         if (!isDraggingRef.current) {
+          groupRef.current.position.copy(xrPositionRef.current);
           groupRef.current.quaternion.copy(xrRotationRef.current);
         }
 
