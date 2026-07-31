@@ -168,18 +168,8 @@ const R3F: React.FC = () => {
         <div className="w-full h-full z-10">
           <Scene
             frameRef={engine.frameRef}
-            historiesRef={engine.historiesRef}
             selectedChannel={engine.selectedChannel}
             onChannelSelect={engine.selectChannel}
-            mode={engine.mode}
-            isPaused={engine.isPaused}
-            speed={engine.speed}
-            togglePlayPause={engine.togglePlayPause}
-            setSpeed={engine.setSpeed}
-            disconnect={engine.disconnect}
-            selectTrial={engine.selectTrial}
-            startDemo={engine.startDemo}
-            startLive={engine.startLive}
           />
         </div>
 
