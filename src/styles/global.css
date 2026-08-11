@@ -2,8 +2,8 @@
 
 @font-face {
   font-family: 'OffBit';
-  src: url('../assets/OffBit Bold.ttf') format('truetype');
-  font-weight: bold;
+  src: url('../assets/OffBit Regular.ttf') format('truetype');
+  font-weight: normal;
   font-style: normal;
 }
 

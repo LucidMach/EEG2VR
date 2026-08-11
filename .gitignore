@@ -12,6 +12,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# vscode
+.vscode/
+
 
 # environment variables
 .env
@@ -19,6 +22,9 @@ pnpm-debug.log*
 
 # macOS-specific files
 .DS_Store
+
+# python
+__pycache__/
 
 # blender
 *.blend1
@@ -28,3 +34,4 @@ pnpm-debug.log*
 .agents/
 skills-lock.json
 CONTEXT.md
+CLAUDE.md

@@ -10,6 +10,20 @@ import "../styles/global.css";
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <title>Astro</title>
+    <script is:inline>
+      if (typeof window !== 'undefined' && window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+        const hook = window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+        const origInject = hook.inject;
+        if (typeof origInject === 'function') {
+          hook.inject = function (renderer) {
+            if (renderer && (!renderer.version || renderer.version === '')) {
+              renderer.version = '19.0.0';
+            }
+            return origInject.call(this, renderer);
+          };
+        }
+      }
+    </script>
   </head>
   <body class="w-full h-full bg-white flex flex-col">
     <!-- <body class="w-full h-full bg-amber-300 flex flex-col"> -->
