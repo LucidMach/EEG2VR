@@ -17,9 +17,17 @@ interface SceneProps {
   frameRef: React.RefObject<Frame>;
   selectedChannel: ElectrodeName | null;
   onChannelSelect: (name: ElectrodeName) => void;
+  onStartDemo?: () => void;
+  onStartLive?: () => void;
 }
 
-const Scene: React.FC<SceneProps> = ({ frameRef, selectedChannel, onChannelSelect }) => (
+const Scene: React.FC<SceneProps> = ({
+  frameRef,
+  selectedChannel,
+  onChannelSelect,
+  onStartDemo,
+  onStartLive,
+}) => (
   <Canvas
     shadows
     camera={{ position: [0, 0, 7.5], fov: 45 }}
@@ -38,7 +46,13 @@ const Scene: React.FC<SceneProps> = ({ frameRef, selectedChannel, onChannelSelec
     <pointLight position={[0, -10, 0]} intensity={Math.PI / 2} />
 
     <XR store={xrStore}>
-      <HeadWrapper frameRef={frameRef} selectedChannel={selectedChannel} onChannelSelect={onChannelSelect} />
+      <HeadWrapper
+        frameRef={frameRef}
+        selectedChannel={selectedChannel}
+        onChannelSelect={onChannelSelect}
+        onStartDemo={onStartDemo}
+        onStartLive={onStartLive}
+      />
     </XR>
 
     <OrbitControls

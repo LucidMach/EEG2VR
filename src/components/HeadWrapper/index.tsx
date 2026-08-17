@@ -17,9 +17,17 @@ interface HeadWrapperProps {
   frameRef: React.RefObject<Frame>;
   selectedChannel: ElectrodeName | null;
   onChannelSelect: (name: ElectrodeName) => void;
+  onStartDemo?: () => void;
+  onStartLive?: () => void;
 }
 
-const HeadWrapper: React.FC<HeadWrapperProps> = ({ frameRef, selectedChannel, onChannelSelect }) => {
+const HeadWrapper: React.FC<HeadWrapperProps> = ({
+  frameRef,
+  selectedChannel,
+  onChannelSelect,
+  onStartDemo,
+  onStartLive,
+}) => {
   const { gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
 
@@ -44,7 +52,12 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({ frameRef, selectedChannel, on
         />
       </group>
       {/* Render 3D Floating Console in WebXR Mode only */}
-      <XRConsole frameRef={frameRef} selectedChannel={selectedChannel} />
+      <XRConsole
+        frameRef={frameRef}
+        selectedChannel={selectedChannel}
+        onStartDemo={onStartDemo}
+        onStartLive={onStartLive}
+      />
     </group>
   );
 };

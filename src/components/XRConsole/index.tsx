@@ -7,14 +7,28 @@ import ConsolePanel from "./ConsolePanel";
 interface XRConsoleProps {
   frameRef: React.RefObject<Frame>;
   selectedChannel: ElectrodeName | null;
+  onStartDemo?: () => void;
+  onStartLive?: () => void;
 }
 
-const XRConsole: React.FC<XRConsoleProps> = ({ frameRef, selectedChannel }) => {
+const XRConsole: React.FC<XRConsoleProps> = ({
+  frameRef,
+  selectedChannel,
+  onStartDemo,
+  onStartLive,
+}) => {
   const snapshot = useConsoleSnapshot(frameRef, selectedChannel);
 
-  if (!snapshot.inVR || snapshot.phase === "idle") return null;
+  if (!snapshot.inVR) return null;
 
-  return <ConsolePanel snapshot={snapshot} selectedChannel={selectedChannel} />;
+  return (
+    <ConsolePanel
+      snapshot={snapshot}
+      selectedChannel={selectedChannel}
+      onStartDemo={onStartDemo}
+      onStartLive={onStartLive}
+    />
+  );
 };
 
 export default XRConsole;

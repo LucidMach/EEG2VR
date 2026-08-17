@@ -47,6 +47,8 @@ const R3F: React.FC = () => {
               frameRef={engine.frameRef}
               selectedChannel={engine.selectedChannel}
               onChannelSelect={engine.selectChannel}
+              onStartDemo={engine.startDemo}
+              onStartLive={engine.startLive}
             />
           </Suspense>
         </div>
