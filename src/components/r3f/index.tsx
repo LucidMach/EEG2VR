@@ -43,13 +43,7 @@ const R3F: React.FC = () => {
         {/* 3D R3F Canvas */}
         <div className="w-full h-full z-10">
           <Suspense fallback={null}>
-            <Scene
-              frameRef={engine.frameRef}
-              selectedChannel={engine.selectedChannel}
-              onChannelSelect={engine.selectChannel}
-              onStartDemo={engine.startDemo}
-              onStartLive={engine.startLive}
-            />
+            <Scene engine={engine} />
           </Suspense>
         </div>
 

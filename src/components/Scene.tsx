@@ -11,23 +11,13 @@ import { OrbitControls } from "@react-three/drei";
 import { XR } from "@react-three/xr";
 import HeadWrapper from "./HeadWrapper";
 import { xrStore } from "../utils/xrStore";
-import type { ElectrodeName, Frame } from "../utils/signalSource";
+import type { PlaybackEngine } from "../hooks/usePlaybackEngine";
 
 interface SceneProps {
-  frameRef: React.RefObject<Frame>;
-  selectedChannel: ElectrodeName | null;
-  onChannelSelect: (name: ElectrodeName) => void;
-  onStartDemo?: () => void;
-  onStartLive?: () => void;
+  engine: PlaybackEngine;
 }
 
-const Scene: React.FC<SceneProps> = ({
-  frameRef,
-  selectedChannel,
-  onChannelSelect,
-  onStartDemo,
-  onStartLive,
-}) => (
+const Scene: React.FC<SceneProps> = ({ engine }) => (
   <Canvas
     shadows
     camera={{ position: [0, 0, 7.5], fov: 45 }}
@@ -46,13 +36,7 @@ const Scene: React.FC<SceneProps> = ({
     <pointLight position={[0, -10, 0]} intensity={Math.PI / 2} />
 
     <XR store={xrStore}>
-      <HeadWrapper
-        frameRef={frameRef}
-        selectedChannel={selectedChannel}
-        onChannelSelect={onChannelSelect}
-        onStartDemo={onStartDemo}
-        onStartLive={onStartLive}
-      />
+      <HeadWrapper engine={engine} />
     </XR>
 
     <OrbitControls

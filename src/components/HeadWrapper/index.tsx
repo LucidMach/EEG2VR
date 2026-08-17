@@ -9,32 +9,22 @@ import React, { useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import EEGHead from "../eegHead";
 import XRConsole from "../XRConsole";
-import type { ElectrodeName, Frame } from "../../utils/signalSource";
+import type { PlaybackEngine } from "../../hooks/usePlaybackEngine";
 import { useXRDragInteraction } from "./useXRDragInteraction";
 import { useHeadPlacement } from "./useHeadPlacement";
 
 interface HeadWrapperProps {
-  frameRef: React.RefObject<Frame>;
-  selectedChannel: ElectrodeName | null;
-  onChannelSelect: (name: ElectrodeName) => void;
-  onStartDemo?: () => void;
-  onStartLive?: () => void;
+  engine: PlaybackEngine;
 }
 
-const HeadWrapper: React.FC<HeadWrapperProps> = ({
-  frameRef,
-  selectedChannel,
-  onChannelSelect,
-  onStartDemo,
-  onStartLive,
-}) => {
+const HeadWrapper: React.FC<HeadWrapperProps> = ({ engine }) => {
   const { gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
 
   const { isDraggingRef, xrPositionRef, xrRotationRef, handlePointerDown, handlePointerMove, handlePointerUp } =
     useXRDragInteraction({ gl, groupRef });
 
-  useHeadPlacement({ groupRef, frameRef, isDraggingRef, xrPositionRef, xrRotationRef });
+  useHeadPlacement({ groupRef, frameRef: engine.frameRef, isDraggingRef, xrPositionRef, xrRotationRef });
 
   return (
     <group>
@@ -45,19 +35,14 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
       >
         <EEGHead
           ref={groupRef}
-          frameRef={frameRef}
-          selectedChannel={selectedChannel}
-          onChannelSelect={onChannelSelect}
+          frameRef={engine.frameRef}
+          selectedChannel={engine.selectedChannel}
+          onChannelSelect={engine.selectChannel}
           rotation={[Math.PI / 32, 0, 0]}
         />
       </group>
-      {/* Render 3D Floating Console in WebXR Mode only */}
-      <XRConsole
-        frameRef={frameRef}
-        selectedChannel={selectedChannel}
-        onStartDemo={onStartDemo}
-        onStartLive={onStartLive}
-      />
+      {/* Render WebXR DOM Overlays & 3D Floating Console in WebXR Mode */}
+      <XRConsole engine={engine} />
     </group>
   );
 };
