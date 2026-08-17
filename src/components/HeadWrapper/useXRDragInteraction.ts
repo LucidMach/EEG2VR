@@ -71,7 +71,8 @@ export function useXRDragInteraction({ gl, groupRef }: Params) {
       groupRef.current.position.copy(newPos);
       xrPositionRef.current.copy(newPos);
     } else if (mode === "rotate") {
-      // Side button pressed: Rotate around axis of grab ray motion without moving position
+      // Side button pressed: Link rotation of the model to the rotation/orientation of the grab ray / controller
+      // Derives relative orientation change from initial drag ray direction & orientation to current ray direction
       const qDiff = new THREE.Quaternion().setFromUnitVectors(
         dragStartRayDirRef.current,
         e.ray.direction

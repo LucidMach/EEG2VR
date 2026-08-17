@@ -40,6 +40,7 @@ export function useHeadPlacement({
 
       if (!isDraggingRef.current) {
         group.position.copy(xrPositionRef.current);
+        // Synchronize model orientation with VR HMD orientation / saved XR rotation
         group.quaternion.copy(xrRotationRef.current);
       }
 
