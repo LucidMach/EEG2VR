@@ -8,9 +8,12 @@ interface Params {
   groupRef: React.RefObject<THREE.Group | null>;
 }
 
+type DragMode = "pan" | "rotate" | null;
+
 // WebXR drag-to-rotate and drag-to-position interaction for the headset group.
 export function useXRDragInteraction({ gl, groupRef }: Params) {
   const isDraggingRef = useRef(false);
+  const dragModeRef = useRef<DragMode>(null);
   const pointerIdRef = useRef<number | null>(null);
   const dragStartRayDirRef = useRef(new THREE.Vector3());
   const dragStartQuatRef = useRef(new THREE.Quaternion());
@@ -23,6 +26,11 @@ export function useXRDragInteraction({ gl, groupRef }: Params) {
     if (!gl.xr.isPresenting) return;
     e.stopPropagation();
     capturePointer(e);
+
+    // e.button === 0: Front trigger (Primary) -> Pan
+    // e.button >= 1 (or squeeze/grip): Side button -> Rotate
+    const mode: DragMode = e.button === 0 ? "pan" : "rotate";
+    dragModeRef.current = mode;
 
     isDraggingRef.current = true;
     pointerIdRef.current = e.pointerId;
@@ -46,20 +54,36 @@ export function useXRDragInteraction({ gl, groupRef }: Params) {
     e.stopPropagation();
     if (!groupRef.current) return;
 
-    // Short-arc rotation aligning the drag's start ray direction to the current one.
-    const qDiff = new THREE.Quaternion().setFromUnitVectors(dragStartRayDirRef.current, e.ray.direction);
+    const mode = dragModeRef.current;
 
-    const rotatedOffset = dragOffsetRef.current.clone().applyQuaternion(qDiff);
-    const newPos = new THREE.Vector3()
-      .copy(e.ray.origin)
-      .addScaledVector(e.ray.direction, dragDistanceRef.current)
-      .add(rotatedOffset);
-    groupRef.current.position.copy(newPos);
-    xrPositionRef.current.copy(newPos);
+    if (mode === "pan") {
+      // Front trigger pressed: Pan position in 3D space, retain initial rotation
+      const qDiff = new THREE.Quaternion().setFromUnitVectors(
+        dragStartRayDirRef.current,
+        e.ray.direction
+      );
+      const rotatedOffset = dragOffsetRef.current.clone().applyQuaternion(qDiff);
+      const newPos = new THREE.Vector3()
+        .copy(e.ray.origin)
+        .addScaledVector(e.ray.direction, dragDistanceRef.current)
+        .add(rotatedOffset);
 
-    const newQuat = new THREE.Quaternion().multiplyQuaternions(qDiff, dragStartQuatRef.current);
-    groupRef.current.quaternion.copy(newQuat);
-    xrRotationRef.current.copy(newQuat);
+      groupRef.current.position.copy(newPos);
+      xrPositionRef.current.copy(newPos);
+    } else if (mode === "rotate") {
+      // Side button pressed: Rotate around axis of grab ray motion without moving position
+      const qDiff = new THREE.Quaternion().setFromUnitVectors(
+        dragStartRayDirRef.current,
+        e.ray.direction
+      );
+      const newQuat = new THREE.Quaternion().multiplyQuaternions(
+        qDiff,
+        dragStartQuatRef.current
+      );
+
+      groupRef.current.quaternion.copy(newQuat);
+      xrRotationRef.current.copy(newQuat);
+    }
   };
 
   const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
@@ -68,6 +92,7 @@ export function useXRDragInteraction({ gl, groupRef }: Params) {
     releasePointer(e);
 
     isDraggingRef.current = false;
+    dragModeRef.current = null;
     pointerIdRef.current = null;
 
     if (groupRef.current) {
