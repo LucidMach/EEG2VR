@@ -68,6 +68,7 @@ const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
             geometry={nodes.Modular_Headset.geometry}
             material={materials.MattBlack}
             scale={0.161}
+            raycast={() => null}
           />
         )}
       </group>

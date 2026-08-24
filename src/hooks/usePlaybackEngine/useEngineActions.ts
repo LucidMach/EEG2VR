@@ -11,6 +11,7 @@ interface Params {
   frameRef: RefObject<Frame>;
   historiesRef: RefObject<Histories>;
   cancelConnectionRef: RefObject<() => void>;
+  syncTrialAudio: (trialIndex: number, startOffset?: number) => void;
   setMode: (mode: AppMode) => void;
   setSelectedChannel: (name: ElectrodeName | null) => void;
   setFrame: (frame: Frame) => void;
@@ -26,6 +27,7 @@ export function useEngineActions({
   frameRef,
   historiesRef,
   cancelConnectionRef,
+  syncTrialAudio,
   setMode,
   setSelectedChannel,
   setFrame,
@@ -34,10 +36,11 @@ export function useEngineActions({
   const selectTrial = useCallback((index: number, startOffset = 0) => {
     timeRef.current = index * TRIAL_SECONDS + startOffset;
     clearHistories(historiesRef.current);
+    syncTrialAudio(index, startOffset);
     const nextFrame = sourceRef.current.getFrame(timeRef.current);
     frameRef.current = nextFrame;
     setFrame(nextFrame);
-  }, []);
+  }, [sourceRef, timeRef, frameRef, historiesRef, syncTrialAudio, setFrame]);
 
   const startDemo = useCallback(() => {
     cancelConnectionRef.current();

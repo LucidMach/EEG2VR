@@ -42,9 +42,23 @@ export function usePlaybackEngine(): PlaybackEngine {
   const modeRef = useRef<AppMode>(mode);
   modeRef.current = mode;
 
+  const audioController = useAudioSync({ mode, isPaused, speed, timeRef });
+
   useSignalSourceSwitch({ mode, timeRef, sourceRef, historiesRef, setSpeed, setIsPaused, setIsLoading });
-  useFrameTick({ speed, isPaused, modeRef, timeRef, sourceRef, frameRef, historiesRef, setFrame });
-  const audioError = useAudioSync({ mode, isPaused, speed, frame });
+  useFrameTick({
+    speed,
+    isPaused,
+    modeRef,
+    timeRef,
+    sourceRef,
+    frameRef,
+    historiesRef,
+    audioRef: audioController.audioRef,
+    audioHasErrorRef: audioController.audioHasErrorRef,
+    syncTrialAudio: audioController.syncTrialAudio,
+    playStimulusAudio: audioController.playStimulusAudio,
+    setFrame,
+  });
 
   const { selectTrial, startDemo, startLive, disconnect, togglePlayPause } = useEngineActions({
     timeRef,
@@ -52,6 +66,7 @@ export function usePlaybackEngine(): PlaybackEngine {
     frameRef,
     historiesRef,
     cancelConnectionRef,
+    syncTrialAudio: audioController.syncTrialAudio,
     setMode,
     setSelectedChannel,
     setFrame,
@@ -77,6 +92,6 @@ export function usePlaybackEngine(): PlaybackEngine {
     startLive,
     disconnect,
     selectTrial,
-    audioError,
+    audioError: audioController.audioError,
   };
 }
