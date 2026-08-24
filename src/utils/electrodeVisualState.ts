@@ -26,8 +26,24 @@ const REGION_COLOR: Record<string, string> = {
   Occipital: "#10b981", // Emerald
 };
 
+// Pre-allocated THREE.Color instances to avoid per-frame GC allocations
+const IDLE_COLOR_OBJ = new THREE.Color(IDLE_COLOR);
+const STIMULUS_COLOR_OBJ = new THREE.Color(STIMULUS_COLOR);
+const QUALITY_COLOR_OBJS: Record<"good" | "fair" | "poor", THREE.Color> = {
+  good: new THREE.Color(QUALITY_COLOR.good),
+  fair: new THREE.Color(QUALITY_COLOR.fair),
+  poor: new THREE.Color(QUALITY_COLOR.poor),
+};
+const REGION_COLOR_OBJS: Record<string, THREE.Color> = {
+  Frontal: new THREE.Color(REGION_COLOR.Frontal),
+  Temporal: new THREE.Color(REGION_COLOR.Temporal),
+  Central: new THREE.Color(REGION_COLOR.Central),
+  Parietal: new THREE.Color(REGION_COLOR.Parietal),
+  Occipital: new THREE.Color(REGION_COLOR.Occipital),
+};
+
 function qualityCheckState(quality: "good" | "fair" | "poor", time: number, value: number): ElectrodeVisualState {
-  const color = new THREE.Color(QUALITY_COLOR[quality]);
+  const color = QUALITY_COLOR_OBJS[quality] ?? QUALITY_COLOR_OBJS.good;
 
   if (quality === "good") {
     return { color, intensity: Math.abs(value), opacity: 0.8 };
@@ -47,16 +63,15 @@ function qualityCheckState(quality: "good" | "fair" | "poor", time: number, valu
   };
 }
 
-function stimulusState(electrodeName: ElectrodeName, value: number, time: number): ElectrodeVisualState {
+function stimulusState(electrodeName: ElectrodeName, value: number): ElectrodeVisualState {
   const amp = Math.abs(value);
   const normalized = Math.min(amp, 1.0);
-  const pulse = Math.sin(time * 12) * 0.35 + 1.25;
-  const intensity = Math.max((0.15 + normalized * 1.85) * 1.5, 1.5) * pulse;
+  const intensity = (0.15 + normalized * 1.85) * 1.5;
 
   const region = ELECTRODE_METADATA[electrodeName]?.region;
-  const colorHex = REGION_COLOR[region] || STIMULUS_COLOR;
+  const color = (region && REGION_COLOR_OBJS[region]) || STIMULUS_COLOR_OBJ;
 
-  return { color: new THREE.Color(colorHex), intensity, opacity: 1.0 };
+  return { color, intensity, opacity: 1.0 };
 }
 
 export function computeElectrodeVisualState(
@@ -67,12 +82,12 @@ export function computeElectrodeVisualState(
   const sample = frame.channels[electrodeName];
 
   if (frame.phase === "idle" || frame.phase === "baseline" || !sample) {
-    return { color: new THREE.Color(IDLE_COLOR), intensity: 0, opacity: frame.phase === "baseline" ? 0.5 : 0.4 };
+    return { color: IDLE_COLOR_OBJ, intensity: 0, opacity: frame.phase === "baseline" ? 0.5 : 0.4 };
   }
 
   if (frame.phase === "quality-check") {
     return qualityCheckState(sample.quality ?? "good", time, sample.value);
   }
 
-  return stimulusState(electrodeName, sample.value, time);
+  return stimulusState(electrodeName, sample.value);
 }

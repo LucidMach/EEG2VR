@@ -44,11 +44,9 @@ export const IdleActionsXR: React.FC<IdleActionsXRProps> = ({ onStartDemo, onSta
         onPointerOver={(e) => {
           e.stopPropagation();
           setDemoHovered(true);
-          if (typeof document !== "undefined") document.body.style.cursor = "pointer";
         }}
         onPointerOut={() => {
           setDemoHovered(false);
-          if (typeof document !== "undefined") document.body.style.cursor = "auto";
         }}
       >
         {/* Rounded Pill Mesh (dark slate bg-slate-800 -> hover bg-slate-700) */}
@@ -84,11 +82,9 @@ export const IdleActionsXR: React.FC<IdleActionsXRProps> = ({ onStartDemo, onSta
         onPointerOver={(e) => {
           e.stopPropagation();
           setLiveHovered(true);
-          if (typeof document !== "undefined") document.body.style.cursor = "pointer";
         }}
         onPointerOut={() => {
           setLiveHovered(false);
-          if (typeof document !== "undefined") document.body.style.cursor = "auto";
         }}
       >
         <Text

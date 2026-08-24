@@ -31,6 +31,8 @@ export function useConsoleSnapshot(
 ): ConsoleSnapshot {
   const [snapshot, setSnapshot] = useState<ConsoleSnapshot>(EMPTY_SNAPSHOT);
   const sigRef = useRef<string>("");
+  const lastUpdateRef = useRef<number>(0);
+  const prevChannelRef = useRef<ElectrodeName | null>(null);
 
   useFrame((state) => {
     const inVR = state.gl.xr.isPresenting;
@@ -60,14 +62,24 @@ export function useConsoleSnapshot(
       currentValue,
     };
 
-    // Only re-render when something the panel actually shows changes.
-    const sig = `${next.phase}|${next.trialIndex}|${next.valence}|${next.arousal}|${
-      next.focus === undefined ? "-" : Math.round(next.focus * 100)
-    }|${Math.round(next.focusAvg * 100)}|${currentValue.toFixed(2)}|${selectedChannel ?? "-"}`;
+    const now = performance.now();
+    const isMajorChange =
+      next.phase !== snapshot.phase ||
+      next.trialIndex !== snapshot.trialIndex ||
+      selectedChannel !== prevChannelRef.current;
 
-    if (sig !== sigRef.current) {
-      sigRef.current = sig;
-      setSnapshot(next);
+    // Throttle fast-changing telemetry text to 4 Hz so Drei <Text> does not re-layout at 90 Hz
+    if (isMajorChange || now - lastUpdateRef.current >= 250) {
+      const sig = `${next.phase}|${next.trialIndex}|${next.valence}|${next.arousal}|${
+        next.focus === undefined ? "-" : Math.round(next.focus * 100)
+      }|${Math.round(next.focusAvg * 100)}|${currentValue.toFixed(2)}|${selectedChannel ?? "-"}`;
+
+      if (sig !== sigRef.current) {
+        sigRef.current = sig;
+        lastUpdateRef.current = now;
+        prevChannelRef.current = selectedChannel;
+        setSnapshot(next);
+      }
     }
   });
 

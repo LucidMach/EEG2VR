@@ -14,6 +14,8 @@ interface EEGHeadProps extends React.ComponentPropsWithoutRef<"group"> {
   onChannelSelect?: (channelName: ElectrodeName) => void;
 }
 
+const BLACK_COLOR = new THREE.Color(0x000000);
+
 const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
   ({ frameRef, selectedChannel, onChannelSelect, ...props }, ref) => {
     const { nodes, materials } = useGLTF("/digitalTwin.glb") as unknown as GLTFResult;
@@ -22,19 +24,21 @@ const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
     useFrame((state) => {
       const time = state.clock.getElapsedTime();
       const frame = frameRef.current;
+      const meshes = meshRefs.current;
 
-      Object.entries(meshRefs.current).forEach(([chName, mesh]) => {
-        if (!mesh) return;
+      for (const chName in meshes) {
+        const mesh = meshes[chName];
+        if (!mesh) continue;
         const material = mesh.material as THREE.MeshStandardMaterial;
-        if (!material) return;
+        if (!material) continue;
 
         // Smoothly lerp color, intensity, and opacity toward the target state.
         const target = computeElectrodeVisualState(frame, chName as ElectrodeName, time);
         material.color.lerp(target.color, 0.2);
-        material.emissive.lerp(target.color, 0.2);
+        material.emissive.lerp(target.intensity > 0 ? target.color : BLACK_COLOR, 0.2);
         material.emissiveIntensity = THREE.MathUtils.lerp(material.emissiveIntensity, target.intensity, 0.2);
         material.opacity = THREE.MathUtils.lerp(material.opacity, target.opacity, 0.2);
-      });
+      }
     });
 
     return (

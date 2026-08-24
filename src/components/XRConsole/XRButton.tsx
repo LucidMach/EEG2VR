@@ -44,15 +44,9 @@ export const XRButton: React.FC<XRButtonProps> = ({
       onPointerOver={(e) => {
         e.stopPropagation();
         setHovered(true);
-        if (typeof document !== "undefined") {
-          document.body.style.cursor = "pointer";
-        }
       }}
       onPointerOut={() => {
         setHovered(false);
-        if (typeof document !== "undefined") {
-          document.body.style.cursor = "auto";
-        }
       }}
     >
       <mesh castShadow receiveShadow position={[0, 0, hovered ? 0.003 : 0]}>

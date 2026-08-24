@@ -8,6 +8,12 @@ interface Params {
   groupRef: React.RefObject<THREE.Group | null>;
 }
 
+const _qDiff = new THREE.Quaternion();
+const _rotatedOffset = new THREE.Vector3();
+const _newPos = new THREE.Vector3();
+const _newQuat = new THREE.Quaternion();
+const _initialRayPoint = new THREE.Vector3();
+
 // WebXR drag-to-rotate and drag-to-position interaction for the headset group.
 export function useXRDragInteraction({ gl, groupRef }: Params) {
   const isDraggingRef = useRef(false);
@@ -34,10 +40,10 @@ export function useXRDragInteraction({ gl, groupRef }: Params) {
       // Grab distance/offset, so the drag doesn't snap the headset onto the ray.
       const grabDistance = e.ray.origin.distanceTo(groupRef.current.position);
       dragDistanceRef.current = grabDistance;
-      const initialRayPoint = new THREE.Vector3()
+      _initialRayPoint
         .copy(e.ray.origin)
         .addScaledVector(e.ray.direction, grabDistance);
-      dragOffsetRef.current.subVectors(groupRef.current.position, initialRayPoint);
+      dragOffsetRef.current.subVectors(groupRef.current.position, _initialRayPoint);
     }
   };
 
@@ -47,19 +53,19 @@ export function useXRDragInteraction({ gl, groupRef }: Params) {
     if (!groupRef.current) return;
 
     // Short-arc rotation aligning the drag's start ray direction to the current one.
-    const qDiff = new THREE.Quaternion().setFromUnitVectors(dragStartRayDirRef.current, e.ray.direction);
+    _qDiff.setFromUnitVectors(dragStartRayDirRef.current, e.ray.direction);
 
-    const rotatedOffset = dragOffsetRef.current.clone().applyQuaternion(qDiff);
-    const newPos = new THREE.Vector3()
+    _rotatedOffset.copy(dragOffsetRef.current).applyQuaternion(_qDiff);
+    _newPos
       .copy(e.ray.origin)
       .addScaledVector(e.ray.direction, dragDistanceRef.current)
-      .add(rotatedOffset);
-    groupRef.current.position.copy(newPos);
-    xrPositionRef.current.copy(newPos);
+      .add(_rotatedOffset);
+    groupRef.current.position.copy(_newPos);
+    xrPositionRef.current.copy(_newPos);
 
-    const newQuat = new THREE.Quaternion().multiplyQuaternions(qDiff, dragStartQuatRef.current);
-    groupRef.current.quaternion.copy(newQuat);
-    xrRotationRef.current.copy(newQuat);
+    _newQuat.multiplyQuaternions(_qDiff, dragStartQuatRef.current);
+    groupRef.current.quaternion.copy(_newQuat);
+    xrRotationRef.current.copy(_newQuat);
   };
 
   const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
