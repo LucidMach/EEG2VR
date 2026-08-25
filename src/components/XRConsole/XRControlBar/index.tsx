@@ -33,6 +33,8 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   const trialElapsed = frame?.trialElapsed ?? 0;
   const isBaseline = frame?.phase === "baseline";
   const phase = frame?.phase ?? "idle";
+  const currentFocus = frame?.focus !== undefined && frame?.focus !== null ? frame.focus : null;
+  const focusAvg = frame?.focus_avg;
 
   const handlePrev = () => {
     if (currentTrial > 0) {
@@ -50,38 +52,17 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   const phaseLabel = isBaseline ? "BASELINE" : "STIMULUS";
   const speedActiveVariant = isBaseline ? "active-baseline" : "active-stimulus";
 
+  const focusStr = currentFocus !== null ? `${Math.round(currentFocus * 100)}%` : "--%";
+  const avgStr = focusAvg !== undefined && focusAvg !== null ? `${Math.round(focusAvg * 100)}%` : "--%";
+
   return (
     <group position={[0, 0.84, -1.05]} rotation={[-Math.PI / 6, 0, 0]}>
-      {/* 1. Base Glass Pod Chassis matching web dark slate capsule */}
-      <mesh position={[0, 0, -0.008]}>
-        <boxGeometry args={[0.72, 0.21, 0.015]} />
-        <meshStandardMaterial
-          color="#090d16"
-          roughness={0.2}
-          metalness={0.4}
-          transparent
-          opacity={0.95}
-        />
-      </mesh>
+      {/* (No background plate/color - completely clean floating controls) */}
 
-      {/* Subtle Rim Edge */}
-      <mesh position={[0, 0, 0.001]}>
-        <boxGeometry args={[0.724, 0.214, 0.002]} />
-        <meshPhysicalMaterial
-          color="#334155"
-          roughness={0.1}
-          metalness={0.2}
-          transmission={0.9}
-          transparent
-          opacity={0.06}
-          depthWrite={false}
-        />
-      </mesh>
-
-      {/* 2. Top Status Row matching web TopHudBar & TrialProgressBar */}
+      {/* 1. Top Status Row */}
       {/* Current Trial Readout */}
       <Text
-        position={[-0.25, 0.058, 0.008]}
+        position={[-0.24, 0.08, 0]}
         fontSize={0.017}
         color="#ffffff"
         anchorX="left"
@@ -91,7 +72,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
       </Text>
 
       {/* Phase Badge */}
-      <group position={[0, 0.058, 0.008]}>
+      <group position={[0, 0.08, 0]}>
         <Text
           fontSize={0.013}
           color={phaseColor}
@@ -104,7 +85,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
 
       {/* Elapsed Time Counter */}
       <Text
-        position={[0.16, 0.058, 0.008]}
+        position={[0.13, 0.08, 0]}
         fontSize={0.013}
         color="#94a3b8"
         anchorX="left"
@@ -118,82 +99,103 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
         label="✕ Exit VR"
         onClick={() => onExitXR?.()}
         width={0.075}
-        height={0.03}
+        height={0.028}
         fontSize={0.01}
         variant="danger"
-        position={[0.3, 0.058, 0.008]}
+        position={[0.28, 0.08, 0]}
       />
 
-      {/* Divider Line matching web slate-800 */}
-      <mesh position={[0, 0.022, 0.008]}>
-        <planeGeometry args={[0.66, 0.001]} />
-        <meshBasicMaterial color="#1e293b" />
-      </mesh>
+      {/* 2. Focus Metrics in space above the pause / playback buttons */}
+      <group position={[0, 0.028, 0]}>
+        {/* Main Focus Metric & Running Average */}
+        <Text
+          position={frame?.ratings ? [-0.08, 0, 0] : [0, 0, 0]}
+          fontSize={0.019}
+          color={phaseColor}
+          anchorX="center"
+          anchorY="middle"
+        >
+          {`Focus ${focusStr}  ·  [Avg: ${avgStr}]`}
+        </Text>
 
-      {/* 3. Bottom Flex Row of Controls matching web PlaybackControls */}
-      <group position={[0, -0.04, 0.008]}>
-        {/* 2.a Prev Trial Button */}
+        {/* Valence / Arousal telemetry chip (if ratings present during stimulus) */}
+        {frame?.ratings && (
+          <Text
+            position={[0.16, 0, 0]}
+            fontSize={0.012}
+            color="#38bdf8"
+            anchorX="center"
+            anchorY="middle"
+          >
+            {`Valence ${frame.ratings.valence.toFixed(1)}  Arousal ${frame.ratings.arousal.toFixed(1)}`}
+          </Text>
+        )}
+      </group>
+
+      {/* 3. Flex Row of Playback Controls */}
+      <group position={[0, -0.04, 0]}>
+        {/* Prev Trial Button */}
         <XRControlPill
           label="◀ Prev"
           onClick={handlePrev}
           disabled={currentTrial <= 0}
-          width={0.1}
-          height={0.046}
-          fontSize={0.014}
+          width={0.095}
+          height={0.044}
+          fontSize={0.013}
           variant={currentTrial > 0 ? "primary" : "neutral"}
-          position={[-0.23, 0, 0]}
+          position={[-0.22, 0, 0]}
         />
 
-        {/* 2.b Playback: Pause / Play Button */}
+        {/* Playback: Pause / Play Button */}
         <XRControlPill
           label={isPaused ? "▶ Play" : "⏸ Pause"}
           onClick={() => onTogglePlayPause?.()}
-          width={0.11}
-          height={0.046}
-          fontSize={0.014}
+          width={0.105}
+          height={0.044}
+          fontSize={0.013}
           variant={isPaused ? speedActiveVariant : "primary"}
-          position={[-0.1, 0, 0]}
+          position={[-0.095, 0, 0]}
         />
 
-        {/* 2.b Playback: 1x Button */}
+        {/* Playback: 1x Button */}
         <XRControlPill
           label="1x"
           onClick={() => onSetSpeed?.(1)}
-          width={0.06}
-          height={0.046}
-          fontSize={0.014}
+          width={0.058}
+          height={0.044}
+          fontSize={0.013}
           variant={speed === 1 ? speedActiveVariant : "neutral"}
-          position={[0.005, 0, 0]}
+          position={[0.008, 0, 0]}
         />
 
-        {/* 2.b Playback: 10x Button */}
+        {/* Playback: 10x Button */}
         <XRControlPill
           label="10x"
           onClick={() => onSetSpeed?.(10)}
-          width={0.06}
-          height={0.046}
-          fontSize={0.014}
+          width={0.058}
+          height={0.044}
+          fontSize={0.013}
           variant={speed === 10 ? speedActiveVariant : "neutral"}
           position={[0.085, 0, 0]}
         />
 
-        {/* 2.c Next Trial Button */}
+        {/* Next Trial Button */}
         <XRControlPill
           label="Next ▶"
           onClick={handleNext}
           disabled={currentTrial >= TOTAL_TRIALS - 1}
-          width={0.1}
-          height={0.046}
-          fontSize={0.014}
+          width={0.095}
+          height={0.044}
+          fontSize={0.013}
           variant={currentTrial < TOTAL_TRIALS - 1 ? "primary" : "neutral"}
-          position={[0.185, 0, 0]}
+          position={[0.18, 0, 0]}
         />
       </group>
 
       {/* Selected Channel Hint */}
       {selectedChannel && (
         <Text
-          position={[0, -0.084, 0.008]}
+          position={[0, -0.088, 0]}
           fontSize={0.01}
           color="#94a3b8"
           anchorX="center"

@@ -5,7 +5,6 @@ import { useConsoleSnapshot } from "./useConsoleSnapshot";
 import IdleActionsXR from "./IdleActionsXR";
 import XRCylinderWall from "./XRCylinderWall";
 import XRControlBar from "./XRControlBar";
-import XRLeftWristWatch from "./XRLeftWristWatch";
 
 interface XRConsoleProps {
   frameRef: React.RefObject<Frame>;
@@ -40,27 +39,20 @@ const XRConsole: React.FC<XRConsoleProps> = ({
 
   if (!snapshot.inVR) return null;
 
+  // Homescreen: Only render idle actions (no signals cylinder)
   if (snapshot.phase === "idle") {
     return (
-      <group>
-        <IdleActionsXR
-          onStartDemo={onStartDemo}
-          onStartLive={onStartLive}
-          onExitXR={onExitXR}
-        />
-        <XRCylinderWall
-          frameRef={frameRef}
-          historiesRef={historiesRef}
-          selectedChannel={selectedChannel}
-          onChannelSelect={onChannelSelect}
-        />
-      </group>
+      <IdleActionsXR
+        onStartDemo={onStartDemo}
+        onStartLive={onStartLive}
+        onExitXR={onExitXR}
+      />
     );
   }
 
   return (
     <group>
-      {/* 1. Immersive 21-Channel Oscilloscope Cylinder Wall Surrounding User */}
+      {/* 1. Immersive 21-Channel Oscilloscope Cylinder Wall Surrounding User (Active in Demo/Live Mode) */}
       <XRCylinderWall
         frameRef={frameRef}
         historiesRef={historiesRef}
@@ -68,7 +60,7 @@ const XRConsole: React.FC<XRConsoleProps> = ({
         onChannelSelect={onChannelSelect}
       />
 
-      {/* 2. Spatial Trial Navigation & Playback Controls Below Headset */}
+      {/* 2. Spatial Trial Navigation & Playback Controls with Focus Telemetry Below Headset */}
       <XRControlBar
         frameRef={frameRef}
         selectedChannel={selectedChannel}
@@ -79,9 +71,6 @@ const XRConsole: React.FC<XRConsoleProps> = ({
         onSetSpeed={onSetSpeed}
         onExitXR={onExitXR}
       />
-
-      {/* 3. Left Hand Focus Metrics Smartwatch Dial */}
-      <XRLeftWristWatch frameRef={frameRef} />
     </group>
   );
 };
