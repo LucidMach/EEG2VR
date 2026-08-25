@@ -19,21 +19,21 @@ export const XRDashboardMesh: React.FC<XRDashboardMeshProps> = ({
   const bezel = 0.03;
 
   return (
-    <group position={[0.72, 1.15, -0.95]} rotation={[0, -Math.PI / 5.2, 0]}>
+    <group position={[0, 0.72, -1.05]} rotation={[-Math.PI / 5, 0, 0]}>
       {/* 1. Outer Beveled Housing */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={[width + bezel * 2, height + bezel * 2, depth]} />
         <meshStandardMaterial
-          color="#0f172a"
-          roughness={0.25}
-          metalness={0.6}
+          color="#f8fafc"
+          roughness={0.2}
+          metalness={0.1}
         />
       </mesh>
 
       {/* 2. Inner Frame Trim */}
       <mesh position={[0, 0, depth / 2 + 0.001]}>
         <planeGeometry args={[width + 0.01, height + 0.01]} />
-        <meshBasicMaterial color="#1e293b" />
+        <meshBasicMaterial color="#e2e8f0" />
       </mesh>
 
       {/* 3. Screen Plane with Canvas Texture */}

@@ -16,8 +16,8 @@ export function drawTrialTimeline(
   const elapsed = frame.trialElapsed ?? 0;
 
   // Background panel for timeline
-  ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-  ctx.strokeStyle = "rgba(51, 65, 85, 0.6)";
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "rgba(226, 232, 240, 0.9)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect(box.x, box.y, box.width, box.height, 10);
@@ -55,12 +55,12 @@ export function drawTrialTimeline(
 
   // Sub-labels: Trial number and Time counter
   ctx.font = "bold 13px monospace";
-  ctx.fillStyle = "#f8fafc";
+  ctx.fillStyle = "#0f172a";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   ctx.fillText(`Trial ${trialIndex + 1} of ${NUM_TRIALS}`, box.x + 20, box.y + box.height - 20);
 
   ctx.textAlign = "right";
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = "#64748b";
   ctx.fillText(`${formatTime(elapsed)} / ${formatTime(TOTAL_DUR)}`, box.x + box.width - 20, box.y + box.height - 20);
 }

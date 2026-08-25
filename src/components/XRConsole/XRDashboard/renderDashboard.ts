@@ -15,11 +15,11 @@ export function renderDashboard(
   const hitAreas: InteractiveHitArea[] = [];
 
   // 1. Clear background
-  ctx.fillStyle = "#020617";
+  ctx.fillStyle = "#f8fafc";
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
   // 2. Draw Top Navigation / Header
-  drawHeader(ctx, state, CANVAS_WIDTH);
+  drawHeader(ctx, state, CANVAS_WIDTH, hitAreas);
 
   // 3. Draw Multi-Channel Oscilloscopes (Left Column)
   drawOscilloscopes(ctx, state, {

@@ -6,20 +6,19 @@ import type { ConsoleSnapshot } from "./useConsoleSnapshot";
 interface ConsolePanelProps {
   snapshot: ConsoleSnapshot;
   selectedChannel: ElectrodeName | null;
+  onExitXR?: () => void;
 }
 
-// The console's 3D plate + text layout. Assumes `snapshot.inVR` is already
-// true and the phase isn't "idle" — index.tsx handles the null case.
-const ConsolePanel: React.FC<ConsolePanelProps> = ({ snapshot, selectedChannel }) => {
+const ConsolePanel: React.FC<ConsolePanelProps> = ({ snapshot, selectedChannel, onExitXR }) => {
   const contextLabel =
     snapshot.phase === "quality-check"
       ? "Monitoring Signal Quality"
       : `Trial ${snapshot.trialIndex + 1} · ${snapshot.phase === "baseline" ? "Baseline" : "Stimulus"}`;
 
   return (
-    <group position={[0.55, 1.1, -0.9]} rotation={[0, -Math.PI / 6, 0]}>
+    <group position={[0, 0.78, -1.05]} rotation={[-Math.PI / 6, 0, 0]}>
       <mesh castShadow receiveShadow>
-        <boxGeometry args={[0.5, 0.42, 0.02]} />
+        <boxGeometry args={[0.5, 0.44, 0.02]} />
         <meshStandardMaterial color="#ffffff" roughness={0.15} metalness={0.1} />
       </mesh>
 
@@ -29,7 +28,6 @@ const ConsolePanel: React.FC<ConsolePanelProps> = ({ snapshot, selectedChannel }
         color="#0f172a"
         anchorX="center"
         anchorY="middle"
-        font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
       >
         EEG DIGITAL TWIN
       </Text>
@@ -50,7 +48,7 @@ const ConsolePanel: React.FC<ConsolePanelProps> = ({ snapshot, selectedChannel }
         </Text>
       )}
 
-      <group position={[0, -0.05, 0.015]}>
+      <group position={[0, -0.04, 0.015]}>
         <mesh>
           <boxGeometry args={[0.42, 0.07, 0.012]} />
           <meshStandardMaterial color="#f8fafc" roughness={0.15} />
@@ -62,10 +60,20 @@ const ConsolePanel: React.FC<ConsolePanelProps> = ({ snapshot, selectedChannel }
           {selectedChannel ? `Value: ${snapshot.currentValue.toFixed(2)} uV` : "No Channel Selected"}
         </Text>
       </group>
+
+      <group
+        position={[0, -0.15, 0.015]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onExitXR?.();
+        }}
+      >
+        <Text fontSize={0.012} color="#dc2626" anchorX="center" anchorY="middle">
+          ✕ Exit XR Mode
+        </Text>
+      </group>
     </group>
   );
 };
 
 export default ConsolePanel;
-
-

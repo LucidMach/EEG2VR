@@ -14,6 +14,7 @@ export interface XRDashboardProps {
   onTrialSelect?: (index: number, startOffset?: number) => void;
   onTogglePlayPause?: () => void;
   onSetSpeed?: (speed: number) => void;
+  onExitXR?: () => void;
 }
 
 export const XRDashboard: React.FC<XRDashboardProps> = ({
@@ -25,6 +26,7 @@ export const XRDashboard: React.FC<XRDashboardProps> = ({
   onTrialSelect,
   onTogglePlayPause,
   onSetSpeed,
+  onExitXR,
 }) => {
   const { texture, hitAreasRef } = useXRDashboardTexture({
     frameRef,
@@ -39,6 +41,7 @@ export const XRDashboard: React.FC<XRDashboardProps> = ({
     onTrialSelect,
     onTogglePlayPause,
     onSetSpeed,
+    onExitXR,
     speed,
   });
 

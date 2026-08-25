@@ -35,15 +35,15 @@ export function drawTimelineSegment({
   ctx.beginPath();
   ctx.arc(dotX, trackY, dotR, 0, Math.PI * 2);
   if (isActive) {
-    ctx.fillStyle = isBaseline ? "#6366f1" : "#4f46e5";
+    ctx.fillStyle = isBaseline ? "#4f46e5" : "#4338ca";
     ctx.fill();
-    ctx.strokeStyle = "#a5b4fc";
+    ctx.strokeStyle = "#818cf8";
     ctx.lineWidth = 2;
     ctx.stroke();
   } else {
-    ctx.fillStyle = isPast ? "#4f46e5" : "#1e293b";
+    ctx.fillStyle = isPast ? "#4f46e5" : "#e2e8f0";
     ctx.fill();
-    ctx.strokeStyle = isPast ? "#6366f1" : "#334155";
+    ctx.strokeStyle = isPast ? "#4338ca" : "#cbd5e1";
     ctx.lineWidth = 1;
     ctx.stroke();
   }
@@ -65,7 +65,7 @@ export function drawTimelineSegment({
   const barH = isActive ? 8 : 4;
   const barY = trackY - barH / 2;
 
-  ctx.fillStyle = isPast ? "#10b981" : "#1e293b";
+  ctx.fillStyle = isPast ? "#10b981" : "#e2e8f0";
   ctx.beginPath();
   ctx.roundRect(barStartX, barY, barW, barH, barH / 2);
   ctx.fill();

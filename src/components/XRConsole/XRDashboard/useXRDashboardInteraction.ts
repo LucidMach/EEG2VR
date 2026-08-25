@@ -7,6 +7,7 @@ interface UseXRDashboardInteractionParams {
   onTrialSelect?: (index: number, startOffset?: number) => void;
   onTogglePlayPause?: () => void;
   onSetSpeed?: (speed: number) => void;
+  onExitXR?: () => void;
   speed?: number;
 }
 
@@ -15,6 +16,7 @@ export function useXRDashboardInteraction({
   onTrialSelect,
   onTogglePlayPause,
   onSetSpeed,
+  onExitXR,
   speed = 1,
 }: UseXRDashboardInteractionParams) {
   const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
@@ -42,6 +44,8 @@ export function useXRDashboardInteraction({
       onTogglePlayPause?.();
     } else if (match.type === "speed") {
       onSetSpeed?.(speed === 1 ? 10 : 1);
+    } else if (match.type === "exit-xr") {
+      onExitXR?.();
     }
   };
 

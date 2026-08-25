@@ -10,7 +10,7 @@ export function drawFocusDial(
   const { x: cx, y: cy, radius } = center;
   const trialIndex = frame.trialIndex ?? 0;
   const isBaseline = frame.phase === "baseline";
-  const accent = isBaseline ? "#6366f1" : "#10b981";
+  const accent = isBaseline ? "#4f46e5" : "#059669";
   const currentFocus = frame.focus !== undefined && frame.focus !== null ? frame.focus : null;
   const focusAvg = frame.focus_avg;
 
@@ -31,7 +31,7 @@ export function drawFocusDial(
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
-    ctx.strokeStyle = i === trialIndex ? accent : isMil ? "#64748b" : "#1e293b";
+    ctx.strokeStyle = i === trialIndex ? accent : isMil ? "#64748b" : "#cbd5e1";
     ctx.lineWidth = i === trialIndex ? 3 : isMil ? 2 : 1.2;
     ctx.stroke();
 
@@ -48,13 +48,13 @@ export function drawFocusDial(
     }
   }
 
-  // 2. Central Knob Body
+  // 2. Central Knob Body (Clean white card surface)
   const knobR = radius * 0.72;
   ctx.beginPath();
   ctx.arc(cx, cy, knobR, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(2, 6, 23, 0.95)";
+  ctx.fillStyle = "#ffffff";
   ctx.fill();
-  ctx.strokeStyle = isBaseline ? "#4f46e5" : "#059669";
+  ctx.strokeStyle = accent;
   ctx.lineWidth = 2.5;
   ctx.stroke();
 
@@ -77,11 +77,11 @@ export function drawFocusDial(
   ctx.fillText(currentFocus !== null ? `${Math.round(currentFocus * 100)}%` : "--%", cx, cy - 10);
 
   ctx.font = "bold 11px monospace";
-  ctx.fillStyle = "#64748b";
+  ctx.fillStyle = "#475569";
   ctx.fillText("FOCUS", cx, cy + 18);
 
   ctx.font = "bold 10px monospace";
-  ctx.fillStyle = "#94a3b8";
+  ctx.fillStyle = "#64748b";
   const avgStr = focusAvg !== undefined ? `${Math.round(focusAvg * 100)}%` : "--";
   ctx.fillText(`[AVG: ${avgStr}]`, cx, cy + 34);
 }

@@ -18,25 +18,26 @@ export function drawOscilloscopes(
   const waveStartX = box.x + labelWidth;
 
   // Background panel for graphs
-  ctx.fillStyle = "rgba(2, 6, 23, 0.6)";
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(box.x, box.y, box.width, box.height);
-  ctx.strokeStyle = "rgba(30, 41, 59, 0.8)";
+  ctx.strokeStyle = "rgba(226, 232, 240, 0.9)";
+  ctx.lineWidth = 1;
   ctx.strokeRect(box.x, box.y, box.width, box.height);
 
   ELECTRODE_NAMES.forEach((name, idx) => {
     const centerY = box.y + idx * laneHeight + laneHeight / 2;
     const isSelected = name === selectedChannel;
     const meta = ELECTRODE_METADATA[name];
-    const color = REGION_RGBA[meta.region] || { r: 148, g: 163, b: 184 };
+    const color = REGION_RGBA[meta.region] || { r: 100, g: 116, b: 139 };
 
     if (isSelected) {
-      ctx.fillStyle = "rgba(99, 102, 241, 0.12)";
+      ctx.fillStyle = "rgba(99, 102, 241, 0.08)";
       ctx.fillRect(box.x, box.y + idx * laneHeight, box.width, laneHeight);
     }
 
     // Gridline
     ctx.beginPath();
-    ctx.strokeStyle = isSelected ? "rgba(99, 102, 241, 0.3)" : "rgba(51, 65, 85, 0.25)";
+    ctx.strokeStyle = isSelected ? "rgba(99, 102, 241, 0.25)" : "rgba(0, 0, 0, 0.05)";
     ctx.lineWidth = 1;
     ctx.setLineDash([3, 4]);
     ctx.moveTo(waveStartX, centerY);
@@ -46,7 +47,7 @@ export function drawOscilloscopes(
 
     // Channel label
     ctx.font = isSelected ? "bold 11px monospace" : "10px monospace";
-    ctx.fillStyle = isSelected ? "#818cf8" : `rgba(${color.r}, ${color.g}, ${color.b}, 0.9)`;
+    ctx.fillStyle = isSelected ? "#4338ca" : `rgba(${color.r}, ${color.g}, ${color.b}, 0.9)`;
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
     ctx.fillText(name, waveStartX - 8, centerY);
@@ -59,8 +60,9 @@ export function drawOscilloscopes(
     const step = waveWidth / (HISTORY_LIMIT - 1);
 
     ctx.beginPath();
-    ctx.strokeStyle = isSelected ? "#a5b4fc" : `rgba(${color.r}, ${color.g}, ${color.b}, 0.85)`;
-    ctx.lineWidth = isSelected ? 2.0 : 1.2;
+    const opacity = isSelected ? 1.0 : 0.6;
+    ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
+    ctx.lineWidth = isSelected ? 2.2 : 1.2;
 
     history.forEach((sample, i) => {
       const yOffset = ((sample.value - mean) / maxDeviation) * (laneHeight * 0.42);

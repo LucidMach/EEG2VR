@@ -1,42 +1,30 @@
 import React, { useState, useMemo } from "react";
 import * as THREE from "three";
 import { Text } from "@react-three/drei";
+import { createPillShape } from "./pillShape";
 
 interface IdleActionsXRProps {
   onStartDemo?: () => void;
   onStartLive?: () => void;
+  onExitXR?: () => void;
 }
 
-// Helper to construct a 2D rounded-rectangle / capsule (pill) shape
-function createPillShape(width: number, height: number, radius: number): THREE.Shape {
-  const shape = new THREE.Shape();
-  const x = -width / 2;
-  const y = -height / 2;
-  shape.moveTo(x + radius, y);
-  shape.lineTo(x + width - radius, y);
-  shape.quadraticCurveTo(x + width, y, x + width, y + radius);
-  shape.lineTo(x + width, y + height - radius);
-  shape.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  shape.lineTo(x + radius, y + height);
-  shape.quadraticCurveTo(x, y + height, x, y + height - radius);
-  shape.lineTo(x, y + radius);
-  shape.quadraticCurveTo(x, y, x + radius, y);
-  return shape;
-}
-
-// 3D WebXR replica of IdleActions (bottom-center layout, pill button + text link)
-export const IdleActionsXR: React.FC<IdleActionsXRProps> = ({ onStartDemo, onStartLive }) => {
+export const IdleActionsXR: React.FC<IdleActionsXRProps> = ({
+  onStartDemo,
+  onStartLive,
+  onExitXR,
+}) => {
   const [demoHovered, setDemoHovered] = useState(false);
   const [liveHovered, setLiveHovered] = useState(false);
+  const [exitHovered, setExitHovered] = useState(false);
 
-  // Pill shape for the "Run Demo Mode" button (rounded-full)
   const pillShape = useMemo(() => createPillShape(0.34, 0.062, 0.031), []);
 
   return (
-    <group position={[0, 0.75, -1.5]} rotation={[-Math.PI / 16, 0, 0]}>
+    <group position={[0, 0.72, -1.2]} rotation={[-Math.PI / 12, 0, 0]}>
       {/* 1. Primary "Run Demo Mode" Pill Button */}
       <group
-        position={[0, 0, 0]}
+        position={[0, 0.04, 0]}
         onClick={(e) => {
           e.stopPropagation();
           onStartDemo?.();
@@ -45,11 +33,8 @@ export const IdleActionsXR: React.FC<IdleActionsXRProps> = ({ onStartDemo, onSta
           e.stopPropagation();
           setDemoHovered(true);
         }}
-        onPointerOut={() => {
-          setDemoHovered(false);
-        }}
+        onPointerOut={() => setDemoHovered(false)}
       >
-        {/* Rounded Pill Mesh (dark slate bg-slate-800 -> hover bg-slate-700) */}
         <mesh position={[0, 0, demoHovered ? 0.004 : 0]}>
           <shapeGeometry args={[pillShape]} />
           <meshStandardMaterial
@@ -59,14 +44,12 @@ export const IdleActionsXR: React.FC<IdleActionsXRProps> = ({ onStartDemo, onSta
             side={THREE.DoubleSide}
           />
         </mesh>
-
         <Text
           position={[0, 0, demoHovered ? 0.008 : 0.004]}
           fontSize={0.015}
           color="#ffffff"
           anchorX="center"
           anchorY="middle"
-          font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
         >
           Run Demo Mode
         </Text>
@@ -74,7 +57,7 @@ export const IdleActionsXR: React.FC<IdleActionsXRProps> = ({ onStartDemo, onSta
 
       {/* 2. Secondary "Connect your EEG headset" Text Link */}
       <group
-        position={[0, -0.058, 0.002]}
+        position={[0, -0.025, 0.002]}
         onClick={(e) => {
           e.stopPropagation();
           onStartLive?.();
@@ -83,18 +66,38 @@ export const IdleActionsXR: React.FC<IdleActionsXRProps> = ({ onStartDemo, onSta
           e.stopPropagation();
           setLiveHovered(true);
         }}
-        onPointerOut={() => {
-          setLiveHovered(false);
-        }}
+        onPointerOut={() => setLiveHovered(false)}
       >
         <Text
           fontSize={0.012}
           color={liveHovered ? "#0f172a" : "#475569"}
           anchorX="center"
           anchorY="middle"
-          font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
         >
           Connect your EEG headset
+        </Text>
+      </group>
+
+      {/* 3. Exit XR Mode Link */}
+      <group
+        position={[0, -0.065, 0.002]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onExitXR?.();
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setExitHovered(true);
+        }}
+        onPointerOut={() => setExitHovered(false)}
+      >
+        <Text
+          fontSize={0.011}
+          color={exitHovered ? "#dc2626" : "#94a3b8"}
+          anchorX="center"
+          anchorY="middle"
+        >
+          ✕ Exit XR Mode
         </Text>
       </group>
     </group>

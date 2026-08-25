@@ -24,6 +24,7 @@ interface HeadWrapperProps {
   onTrialSelect?: (index: number, startOffset?: number) => void;
   onTogglePlayPause?: () => void;
   onSetSpeed?: (speed: number) => void;
+  onExitXR?: () => void;
   speed?: number;
   isPaused?: boolean;
 }
@@ -38,6 +39,7 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
   onTrialSelect,
   onTogglePlayPause,
   onSetSpeed,
+  onExitXR,
   speed = 1,
   isPaused = false,
 }) => {
@@ -48,6 +50,10 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
     useXRDragInteraction({ gl, groupRef });
 
   useHeadPlacement({ groupRef, frameRef, isDraggingRef, xrPositionRef, xrRotationRef });
+
+  const handleExitXR = () => {
+    onExitXR?.() || gl.xr.getSession()?.end();
+  };
 
   return (
     <group>
@@ -74,6 +80,7 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
         onTrialSelect={onTrialSelect}
         onTogglePlayPause={onTogglePlayPause}
         onSetSpeed={onSetSpeed}
+        onExitXR={handleExitXR}
         speed={speed}
         isPaused={isPaused}
       />

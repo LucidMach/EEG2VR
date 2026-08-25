@@ -15,6 +15,7 @@ interface XRConsoleProps {
   onTrialSelect?: (index: number, startOffset?: number) => void;
   onTogglePlayPause?: () => void;
   onSetSpeed?: (speed: number) => void;
+  onExitXR?: () => void;
   speed?: number;
   isPaused?: boolean;
 }
@@ -28,6 +29,7 @@ const XRConsole: React.FC<XRConsoleProps> = ({
   onTrialSelect,
   onTogglePlayPause,
   onSetSpeed,
+  onExitXR,
   speed = 1,
   isPaused = false,
 }) => {
@@ -36,11 +38,23 @@ const XRConsole: React.FC<XRConsoleProps> = ({
   if (!snapshot.inVR) return null;
 
   if (snapshot.phase === "idle") {
-    return <IdleActionsXR onStartDemo={onStartDemo} onStartLive={onStartLive} />;
+    return (
+      <IdleActionsXR
+        onStartDemo={onStartDemo}
+        onStartLive={onStartLive}
+        onExitXR={onExitXR}
+      />
+    );
   }
 
   if (snapshot.phase === "quality-check") {
-    return <ConsolePanel snapshot={snapshot} selectedChannel={selectedChannel} />;
+    return (
+      <ConsolePanel
+        snapshot={snapshot}
+        selectedChannel={selectedChannel}
+        onExitXR={onExitXR}
+      />
+    );
   }
 
   return (
@@ -53,6 +67,7 @@ const XRConsole: React.FC<XRConsoleProps> = ({
       onTrialSelect={onTrialSelect}
       onTogglePlayPause={onTogglePlayPause}
       onSetSpeed={onSetSpeed}
+      onExitXR={onExitXR}
     />
   );
 };
