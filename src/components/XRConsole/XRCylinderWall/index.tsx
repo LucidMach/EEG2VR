@@ -55,7 +55,7 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
     if (channel !== hoveredChannelRef.current) {
       hoveredChannelRef.current = channel;
       if (channel) {
-        triggerXRHaptic(e, 0.25, 10);
+        triggerXRHaptic(e, 0.2, 10);
       }
     }
   };
@@ -73,7 +73,7 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
 
     const channel = getChannelAtUV(e.uv);
     if (channel) {
-      triggerXRHaptic(e, 0.6, 25);
+      triggerXRHaptic(e, 0.5, 25);
       onChannelSelect?.(channel);
     }
   };
@@ -84,7 +84,7 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
 
   return (
     <group position={[0, 1.35, 0]}>
-      {/* 1. Curved Backing Panel for Depth & Contrast */}
+      {/* 1. Clean Backing Panel for Depth & Contrast */}
       <mesh position={[0, 0, 0]}>
         <cylinderGeometry
           args={[
@@ -99,10 +99,10 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
           ]}
         />
         <meshBasicMaterial
-          color="#020408"
+          color="#ffffff"
           side={THREE.BackSide}
           transparent
-          opacity={0.85}
+          opacity={0.9}
         />
       </mesh>
 
@@ -131,12 +131,12 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
             side={THREE.BackSide}
             toneMapped={false}
             transparent
-            opacity={0.96}
+            opacity={0.98}
           />
         </mesh>
       )}
 
-      {/* 3. Subtle Holographic Glass Rim */}
+      {/* 3. Subtle Clean Glass Rim Overlay */}
       <mesh position={[0, 0, 0]}>
         <cylinderGeometry
           args={[
@@ -151,12 +151,12 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
           ]}
         />
         <meshPhysicalMaterial
-          color="#38bdf8"
+          color="#ffffff"
           roughness={0.1}
-          metalness={0.2}
-          transmission={0.96}
+          metalness={0.05}
+          transmission={0.95}
           transparent
-          opacity={0.04}
+          opacity={0.03}
           side={THREE.BackSide}
           depthWrite={false}
         />

@@ -11,7 +11,7 @@ interface XRControlPillProps {
   width?: number;
   height?: number;
   fontSize?: number;
-  variant?: "primary" | "secondary" | "active" | "danger" | "neutral";
+  variant?: "primary" | "secondary" | "active-baseline" | "active-stimulus" | "danger" | "neutral";
   disabled?: boolean;
   position?: [number, number, number];
 }
@@ -19,9 +19,9 @@ interface XRControlPillProps {
 export const XRControlPill: React.FC<XRControlPillProps> = ({
   label,
   onClick,
-  width = 0.12,
+  width = 0.11,
   height = 0.044,
-  fontSize = 0.015,
+  fontSize = 0.014,
   variant = "neutral",
   disabled = false,
   position = [0, 0, 0],
@@ -35,48 +35,43 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
   const colors = useMemo(() => {
     if (disabled) {
       return {
-        bg: "#1e293b",
-        border: "#334155",
-        text: "#64748b",
-        emissive: "#000000",
+        bg: "#0f172a",
+        border: "#1e293b",
+        text: "#475569",
       };
     }
     switch (variant) {
-      case "active":
+      case "active-baseline":
         return {
-          bg: "#0284c7",
-          border: "#38bdf8",
+          bg: "#4f46e5",
+          border: "#6366f1",
           text: "#ffffff",
-          emissive: "#0284c7",
         };
-      case "primary":
+      case "active-stimulus":
         return {
-          bg: hovered ? "#2563eb" : "#1d4ed8",
-          border: hovered ? "#60a5fa" : "#3b82f6",
+          bg: "#059669",
+          border: "#10b981",
           text: "#ffffff",
-          emissive: hovered ? "#1d4ed8" : "#000000",
         };
       case "danger":
         return {
           bg: hovered ? "#dc2626" : "#991b1b",
           border: hovered ? "#f87171" : "#ef4444",
           text: "#fee2e2",
-          emissive: hovered ? "#dc2626" : "#000000",
         };
-      case "secondary":
+      case "primary":
         return {
           bg: hovered ? "#334155" : "#1e293b",
-          border: hovered ? "#94a3b8" : "#475569",
-          text: "#f8fafc",
-          emissive: hovered ? "#334155" : "#000000",
+          border: hovered ? "#64748b" : "#334155",
+          text: "#ffffff",
         };
+      case "secondary":
       case "neutral":
       default:
         return {
           bg: hovered ? "#1e293b" : "#0f172a",
-          border: hovered ? "#38bdf8" : "#334155",
-          text: hovered ? "#38bdf8" : "#e2e8f0",
-          emissive: hovered ? "#0284c7" : "#000000",
+          border: hovered ? "#475569" : "#1e293b",
+          text: hovered ? "#ffffff" : "#94a3b8",
         };
     }
   }, [variant, hovered, disabled]);
@@ -97,11 +92,11 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
   const handleClick = (e: ThreeEvent<PointerEvent>) => {
     if (disabled) return;
     e.stopPropagation();
-    triggerXRHaptic(e, 0.6, 25);
+    triggerXRHaptic(e, 0.5, 25);
     onClick?.(e);
   };
 
-  const zElev = hovered && !disabled ? 0.006 : 0;
+  const zElev = hovered && !disabled ? 0.005 : 0;
 
   return (
     <group
@@ -110,22 +105,18 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
     >
-      {/* 3D Button Pill Mesh */}
       <mesh position={[0, 0, zElev]}>
         <shapeGeometry args={[pillShape]} />
         <meshStandardMaterial
           color={colors.bg}
           roughness={0.2}
-          metalness={0.2}
-          emissive={colors.emissive}
-          emissiveIntensity={hovered ? 0.4 : 0.1}
+          metalness={0.1}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Button Label */}
       <Text
-        position={[0, 0, zElev + 0.005]}
+        position={[0, 0, zElev + 0.004]}
         fontSize={fontSize}
         color={colors.text}
         anchorX="center"

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import type { ElectrodeName, Frame } from "../../../utils/signalSource";
 import type { HistorySample } from "../../../hooks/usePlaybackEngine";
 import {
@@ -43,6 +44,11 @@ export function useXRCylinderTexture({
     tex.magFilter = THREE.LinearFilter;
     tex.generateMipmaps = false;
     tex.anisotropy = 8;
+    // Un-mirror horizontally for viewing inside of cylinder
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.repeat.x = -1;
+    tex.offset.x = 1;
+
     setTexture(tex);
 
     return () => {
@@ -51,51 +57,43 @@ export function useXRCylinderTexture({
     };
   }, []);
 
-  useEffect(() => {
-    let animFrameId = 0;
+  // Update on each animation frame inside R3F / WebXR render loop
+  useFrame(() => {
+    const canvas = canvasRef.current;
+    const currentFrame = frameRef.current;
+    const hoveredChannel = hoveredChannelRef.current;
+    const now = performance.now();
 
-    const loop = (time: number) => {
-      const canvas = canvasRef.current;
-      const currentFrame = frameRef.current;
-      const hoveredChannel = hoveredChannelRef.current;
+    if (canvas && texture && currentFrame) {
+      const elapsed = now - lastDrawTimeRef.current;
+      const channelChanged =
+        selectedChannel !== prevSelectedChannelRef.current ||
+        hoveredChannel !== prevHoveredChannelRef.current;
+      const frameChanged = currentFrame !== lastFrameRef.current;
 
-      if (canvas && texture && currentFrame) {
-        // Throttle updates to ~30 FPS to conserve GPU bandwidth
-        const elapsed = time - lastDrawTimeRef.current;
-        const channelChanged =
-          selectedChannel !== prevSelectedChannelRef.current ||
-          hoveredChannel !== prevHoveredChannelRef.current;
-        const frameChanged = currentFrame !== lastFrameRef.current;
+      // Throttle to 30 FPS or repaint immediately on channel selection / hover change
+      if (channelChanged || (frameChanged && elapsed >= 33)) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          const hitAreas = renderCylinderWall(ctx, {
+            frame: currentFrame,
+            histories: historiesRef?.current || ({} as Record<ElectrodeName, HistorySample[]>),
+            selectedChannel,
+            hoveredChannel,
+          });
 
-        if (channelChanged || (frameChanged && elapsed >= 33)) {
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            const hitAreas = renderCylinderWall(ctx, {
-              frame: currentFrame,
-              histories: historiesRef?.current || ({} as Record<ElectrodeName, HistorySample[]>),
-              selectedChannel,
-              hoveredChannel,
-            });
-
-            hitAreasRef.current = hitAreas;
-            texture.needsUpdate = true;
-            lastDrawTimeRef.current = time;
-            lastFrameRef.current = currentFrame;
-            prevSelectedChannelRef.current = selectedChannel;
-            prevHoveredChannelRef.current = hoveredChannel;
+          if (hitAreasRef.current) {
+            (hitAreasRef.current as any) = hitAreas;
           }
+          texture.needsUpdate = true;
+          lastDrawTimeRef.current = now;
+          lastFrameRef.current = currentFrame;
+          prevSelectedChannelRef.current = selectedChannel;
+          prevHoveredChannelRef.current = hoveredChannel;
         }
       }
-
-      animFrameId = requestAnimationFrame(loop);
-    };
-
-    animFrameId = requestAnimationFrame(loop);
-
-    return () => {
-      cancelAnimationFrame(animFrameId);
-    };
-  }, [texture, frameRef, historiesRef, selectedChannel, hoveredChannelRef, hitAreasRef]);
+    }
+  });
 
   return { texture };
 }

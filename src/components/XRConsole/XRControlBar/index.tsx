@@ -31,6 +31,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   const frame = frameRef.current;
   const currentTrial = frame?.trialIndex ?? 0;
   const trialElapsed = frame?.trialElapsed ?? 0;
+  const isBaseline = frame?.phase === "baseline";
   const phase = frame?.phase ?? "idle";
 
   const handlePrev = () => {
@@ -45,70 +46,65 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
     }
   };
 
-  const phaseColor =
-    phase === "stimulus" ? "#34d399" : phase === "baseline" ? "#818cf8" : "#fbbf24";
-  const phaseText =
-    phase === "stimulus"
-      ? "STIMULUS PHASE"
-      : phase === "baseline"
-      ? "BASELINE PHASE"
-      : "QUALITY CHECK";
+  const phaseColor = isBaseline ? "#818cf8" : "#34d399";
+  const phaseLabel = isBaseline ? "BASELINE" : "STIMULUS";
+  const speedActiveVariant = isBaseline ? "active-baseline" : "active-stimulus";
 
   return (
-    <group position={[0, 0.82, -1.05]} rotation={[-Math.PI / 6, 0, 0]}>
-      {/* 1. Base Glass Pod Chassis */}
+    <group position={[0, 0.84, -1.05]} rotation={[-Math.PI / 6, 0, 0]}>
+      {/* 1. Base Glass Pod Chassis matching web dark slate capsule */}
       <mesh position={[0, 0, -0.008]}>
-        <boxGeometry args={[0.74, 0.22, 0.015]} />
+        <boxGeometry args={[0.72, 0.21, 0.015]} />
         <meshStandardMaterial
-          color="#0b1120"
+          color="#090d16"
           roughness={0.2}
           metalness={0.4}
           transparent
-          opacity={0.94}
+          opacity={0.95}
         />
       </mesh>
 
-      {/* Rim Bezel */}
+      {/* Subtle Rim Edge */}
       <mesh position={[0, 0, 0.001]}>
-        <boxGeometry args={[0.744, 0.224, 0.002]} />
+        <boxGeometry args={[0.724, 0.214, 0.002]} />
         <meshPhysicalMaterial
-          color="#38bdf8"
+          color="#334155"
           roughness={0.1}
           metalness={0.2}
           transmission={0.9}
           transparent
-          opacity={0.08}
+          opacity={0.06}
           depthWrite={false}
         />
       </mesh>
 
-      {/* 2. Top Status Row */}
-      {/* 2.a Current Trial Readout */}
+      {/* 2. Top Status Row matching web TopHudBar & TrialProgressBar */}
+      {/* Current Trial Readout */}
       <Text
-        position={[-0.26, 0.062, 0.008]}
-        fontSize={0.018}
-        color="#38bdf8"
+        position={[-0.25, 0.058, 0.008]}
+        fontSize={0.017}
+        color="#ffffff"
         anchorX="left"
         anchorY="middle"
       >
-        {`TRIAL ${currentTrial + 1} OF ${TOTAL_TRIALS}`}
+        {`Trial ${currentTrial + 1} of ${TOTAL_TRIALS}`}
       </Text>
 
-      {/* 2.b Phase Pill Indicator */}
-      <group position={[0, 0.062, 0.008]}>
+      {/* Phase Badge */}
+      <group position={[0, 0.058, 0.008]}>
         <Text
           fontSize={0.013}
           color={phaseColor}
           anchorX="center"
           anchorY="middle"
         >
-          {`● ${phaseText}`}
+          {`● ${phaseLabel}`}
         </Text>
       </group>
 
-      {/* 2.c Elapsed Time Counter */}
+      {/* Elapsed Time Counter */}
       <Text
-        position={[0.16, 0.062, 0.008]}
+        position={[0.16, 0.058, 0.008]}
         fontSize={0.013}
         color="#94a3b8"
         anchorX="left"
@@ -117,93 +113,93 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
         {`${formatTime(trialElapsed)} / ${formatTime(TRIAL_DURATION)}`}
       </Text>
 
-      {/* 2.d Exit XR Button */}
+      {/* Exit XR Button */}
       <XRControlPill
-        label="✕ EXIT"
+        label="✕ Exit VR"
         onClick={() => onExitXR?.()}
         width={0.075}
-        height={0.032}
-        fontSize={0.011}
+        height={0.03}
+        fontSize={0.01}
         variant="danger"
-        position={[0.31, 0.062, 0.008]}
+        position={[0.3, 0.058, 0.008]}
       />
 
-      {/* Divider Line */}
-      <mesh position={[0, 0.024, 0.008]}>
-        <planeGeometry args={[0.68, 0.0015]} />
-        <meshBasicMaterial color="#334155" transparent opacity={0.6} />
+      {/* Divider Line matching web slate-800 */}
+      <mesh position={[0, 0.022, 0.008]}>
+        <planeGeometry args={[0.66, 0.001]} />
+        <meshBasicMaterial color="#1e293b" />
       </mesh>
 
-      {/* 3. Bottom Flex Row of Controls */}
-      <group position={[0, -0.042, 0.008]}>
+      {/* 3. Bottom Flex Row of Controls matching web PlaybackControls */}
+      <group position={[0, -0.04, 0.008]}>
         {/* 2.a Prev Trial Button */}
         <XRControlPill
-          label="◀ PREV"
+          label="◀ Prev"
           onClick={handlePrev}
           disabled={currentTrial <= 0}
-          width={0.11}
+          width={0.1}
           height={0.046}
           fontSize={0.014}
           variant={currentTrial > 0 ? "primary" : "neutral"}
-          position={[-0.24, 0, 0]}
+          position={[-0.23, 0, 0]}
         />
 
         {/* 2.b Playback: Pause / Play Button */}
         <XRControlPill
-          label={isPaused ? "▶ PLAY" : "⏸ PAUSE"}
+          label={isPaused ? "▶ Play" : "⏸ Pause"}
           onClick={() => onTogglePlayPause?.()}
           width={0.11}
           height={0.046}
           fontSize={0.014}
-          variant={isPaused ? "active" : "secondary"}
-          position={[-0.105, 0, 0]}
+          variant={isPaused ? speedActiveVariant : "primary"}
+          position={[-0.1, 0, 0]}
         />
 
         {/* 2.b Playback: 1x Button */}
         <XRControlPill
-          label="1X"
+          label="1x"
           onClick={() => onSetSpeed?.(1)}
-          width={0.065}
+          width={0.06}
           height={0.046}
           fontSize={0.014}
-          variant={speed === 1 ? "active" : "neutral"}
+          variant={speed === 1 ? speedActiveVariant : "neutral"}
           position={[0.005, 0, 0]}
         />
 
         {/* 2.b Playback: 10x Button */}
         <XRControlPill
-          label="10X"
+          label="10x"
           onClick={() => onSetSpeed?.(10)}
-          width={0.065}
+          width={0.06}
           height={0.046}
           fontSize={0.014}
-          variant={speed === 10 ? "active" : "neutral"}
-          position={[0.095, 0, 0]}
+          variant={speed === 10 ? speedActiveVariant : "neutral"}
+          position={[0.085, 0, 0]}
         />
 
         {/* 2.c Next Trial Button */}
         <XRControlPill
-          label="NEXT ▶"
+          label="Next ▶"
           onClick={handleNext}
           disabled={currentTrial >= TOTAL_TRIALS - 1}
-          width={0.11}
+          width={0.1}
           height={0.046}
           fontSize={0.014}
           variant={currentTrial < TOTAL_TRIALS - 1 ? "primary" : "neutral"}
-          position={[0.205, 0, 0]}
+          position={[0.185, 0, 0]}
         />
       </group>
 
       {/* Selected Channel Hint */}
       {selectedChannel && (
         <Text
-          position={[0, -0.088, 0.008]}
-          fontSize={0.011}
-          color="#38bdf8"
+          position={[0, -0.084, 0.008]}
+          fontSize={0.01}
+          color="#94a3b8"
           anchorX="center"
           anchorY="middle"
         >
-          {`Selected Electrode: ${selectedChannel}  ·  Click sensor LED or cylinder lane to change`}
+          {`Selected: ${selectedChannel}  ·  Point ray at sensor LED or cylinder lane to inspect`}
         </Text>
       )}
     </group>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import type { Frame } from "../../../utils/signalSource";
 import {
   NUM_TRIALS,
@@ -40,42 +41,32 @@ export function useWatchDialTexture({ frameRef }: UseWatchDialTextureProps) {
     };
   }, []);
 
-  useEffect(() => {
-    let animFrameId = 0;
+  // Update on each animation frame inside R3F / WebXR render loop
+  useFrame(() => {
+    const canvas = canvasRef.current;
+    const currentFrame = frameRef.current;
+    const now = performance.now();
 
-    const loop = (time: number) => {
-      const canvas = canvasRef.current;
-      const currentFrame = frameRef.current;
+    if (canvas && texture && currentFrame) {
+      const elapsed = now - lastDrawTimeRef.current;
+      const frameChanged = currentFrame !== lastFrameRef.current;
 
-      if (canvas && texture && currentFrame) {
-        const elapsed = time - lastDrawTimeRef.current;
-        const frameChanged = currentFrame !== lastFrameRef.current;
-
-        if (frameChanged || elapsed >= 33) {
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            drawWatchFace(ctx, currentFrame, WATCH_TEXTURE_SIZE);
-            texture.needsUpdate = true;
-            lastDrawTimeRef.current = time;
-            lastFrameRef.current = currentFrame;
-          }
+      if (frameChanged || elapsed >= 33) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          drawWebWatchFace(ctx, currentFrame, WATCH_TEXTURE_SIZE);
+          texture.needsUpdate = true;
+          lastDrawTimeRef.current = now;
+          lastFrameRef.current = currentFrame;
         }
       }
-
-      animFrameId = requestAnimationFrame(loop);
-    };
-
-    animFrameId = requestAnimationFrame(loop);
-
-    return () => {
-      cancelAnimationFrame(animFrameId);
-    };
-  }, [texture, frameRef]);
+    }
+  });
 
   return { texture };
 }
 
-function drawWatchFace(
+function drawWebWatchFace(
   ctx: CanvasRenderingContext2D,
   frame: Frame,
   size: number
@@ -86,29 +77,29 @@ function drawWatchFace(
 
   const trialIndex = frame.trialIndex ?? 0;
   const isBaseline = frame.phase === "baseline";
-  const accent = isBaseline ? "#818cf8" : "#34d399";
+  const accentColor = isBaseline ? "#818cf8" : "#34d399";
   const accentGlow = isBaseline
-    ? "rgba(129, 140, 248, 0.4)"
-    : "rgba(52, 211, 153, 0.4)";
+    ? "rgba(129, 140, 248, 0.5)"
+    : "rgba(52, 211, 153, 0.5)";
   const currentFocus =
     frame.focus !== undefined && frame.focus !== null ? frame.focus : null;
   const focusAvg = frame.focus_avg;
 
-  // 1. Clear Watch Face to Deep Obsidian
+  // 1. Clear Watch Face to Dark Slate (matching web TrialDial knob bg-slate-950/95)
   ctx.clearRect(0, 0, size, size);
   ctx.beginPath();
   ctx.arc(cx, cy, radius + 20, 0, Math.PI * 2);
-  ctx.fillStyle = "#090d16";
+  ctx.fillStyle = "#020617";
   ctx.fill();
 
-  // Concentric decorative ring
+  // Outer bezel stroke matching web border-slate-800
   ctx.beginPath();
-  ctx.arc(cx, cy, radius * 0.95, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
-  ctx.lineWidth = 3;
+  ctx.arc(cx, cy, radius + 8, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(30, 41, 59, 0.8)";
+  ctx.lineWidth = 4;
   ctx.stroke();
 
-  // 2. Outer 40-Trial Milestone & Tick Ring
+  // 2. Outer 40-Trial Milestone & Tick Ring matching web DialTicks
   for (let i = 0; i < NUM_TRIALS; i++) {
     const angleDeg = getAngleForIndex(i);
     const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -129,84 +120,122 @@ function drawWatchFace(
     ctx.lineTo(x2, y2);
     ctx.strokeStyle =
       i === trialIndex
-        ? accent
+        ? accentColor
         : isPastOrActive
-        ? "rgba(255, 255, 255, 0.7)"
-        : "rgba(255, 255, 255, 0.15)";
+        ? "rgba(241, 245, 249, 0.8)"
+        : "rgba(100, 116, 139, 0.35)";
     ctx.lineWidth = i === trialIndex ? 6 : isMil ? 4 : 2;
     ctx.stroke();
 
-    // Milestone labels
+    // Milestone labels matching web MilestoneLabels (01, 10, 20, 30, 40)
     if (isMil) {
       const labelR = radius - 48;
       const lx = cx + labelR * Math.cos(rad);
       const ly = cy + labelR * Math.sin(rad);
-      ctx.font = i === trialIndex ? "bold 22px monospace" : "18px monospace";
-      ctx.fillStyle = i === trialIndex ? accent : "#94a3b8";
+      ctx.font = i === trialIndex ? "bold 24px monospace" : "18px monospace";
+      ctx.fillStyle = i === trialIndex ? accentColor : "#64748b";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(getMilestoneLabel(i), lx, ly);
     }
   }
 
-  // Active Trial Pointer / Needle Dot
+  // 3. Central Rotating Knob Body matching web DialKnob
+  const knobR = radius * 0.64;
+  ctx.beginPath();
+  ctx.arc(cx, cy, knobR, 0, Math.PI * 2);
+  ctx.fillStyle = "#090d16";
+  ctx.fill();
+  ctx.strokeStyle = isBaseline ? "rgba(99, 102, 241, 0.6)" : "rgba(16, 185, 129, 0.6)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Active Trial Pointer Triangle on Knob Edge
   const activeAngleDeg = getAngleForIndex(trialIndex);
   const activeRad = ((activeAngleDeg - 90) * Math.PI) / 180;
-  const needleR = radius * 0.72;
-  const nx = cx + needleR * Math.cos(activeRad);
-  const ny = cy + needleR * Math.sin(activeRad);
+  const triangleTipR = knobR - 2;
+  const tx = cx + triangleTipR * Math.cos(activeRad);
+  const ty = cy + triangleTipR * Math.sin(activeRad);
 
   ctx.beginPath();
-  ctx.arc(nx, ny, 10, 0, Math.PI * 2);
-  ctx.fillStyle = accent;
+  ctx.arc(tx, ty, 8, 0, Math.PI * 2);
+  ctx.fillStyle = accentColor;
   ctx.shadowColor = accentGlow;
-  ctx.shadowBlur = 12;
+  ctx.shadowBlur = 10;
   ctx.fill();
   ctx.shadowBlur = 0;
 
-  // 3. Central Focus Dial Gauge Card
-  const innerR = radius * 0.62;
-  ctx.beginPath();
-  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
-  ctx.fillStyle = "#0e1526";
-  ctx.fill();
-  ctx.strokeStyle = accent;
-  ctx.lineWidth = 3.5;
-  ctx.stroke();
+  // 4. Embedded Watermark Logo in center
+  drawWatermark(ctx, cx, cy, knobR * 0.8);
 
-  // Phase Title Badge (Top of Center)
-  ctx.font = "900 18px monospace";
-  ctx.fillStyle = accent;
+  // 5. Central Digital Focus Readout matching web DialReadout
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(isBaseline ? "BASELINE" : "STIMULUS", cx, cy - innerR * 0.6);
 
-  // Large Focus Metric Percentage (Center)
-  ctx.font = "900 84px monospace";
-  ctx.fillStyle = "#ffffff";
-  const focusStr =
-    currentFocus !== null ? `${Math.round(currentFocus * 100)}%` : "--%";
-  ctx.fillText(focusStr, cx, cy - 12);
+  // Focus Percentage
+  ctx.font = "900 86px monospace";
+  ctx.fillStyle = accentColor;
+  const focusValStr = currentFocus !== null ? `${Math.round(currentFocus * 100)}` : "--";
+  ctx.fillText(focusValStr, cx - 18, cy - 10);
 
-  // Focus Label
-  ctx.font = "bold 22px monospace";
+  ctx.font = "bold 34px sans-serif";
+  ctx.fillText("%", cx + (focusValStr.length > 2 ? 65 : 48), cy - 18);
+
+  // "FOCUS" Subtitle matching web DialReadout
+  ctx.font = "900 20px sans-serif";
   ctx.fillStyle = "#64748b";
-  ctx.fillText("FOCUS INDEX", cx, cy + 54);
+  ctx.fillText("FOCUS", cx, cy + 44);
 
-  // Running Average
-  ctx.font = "bold 20px monospace";
+  // Running Average matching web DialReadout
+  ctx.font = "bold 18px monospace";
   ctx.fillStyle = "#94a3b8";
-  const avgStr = focusAvg !== undefined ? `${Math.round(focusAvg * 100)}%` : "--";
-  ctx.fillText(`[AVG: ${avgStr}]`, cx, cy + 86);
+  const avgStr = focusAvg !== undefined && focusAvg !== null ? `${Math.round(focusAvg * 100)}%` : "--";
+  ctx.fillText(`[AVG: ${avgStr}]`, cx, cy + 74);
+}
 
-  // Valence / Arousal Readout (Bottom of Center)
-  if (frame.ratings) {
-    ctx.font = "bold 18px monospace";
-    ctx.fillStyle = "#38bdf8";
-    ctx.fillText(
-      `VAL ${frame.ratings.valence.toFixed(1)}  ARO ${frame.ratings.arousal.toFixed(1)}`,
-      cx,
-      cy + innerR * 0.72
-    );
-  }
+// Draws the subtle 3D cube watermark from web WatermarkLogo
+function drawWatermark(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number
+): void {
+  ctx.save();
+  ctx.translate(cx, cy);
+  const s = size / 100;
+  ctx.scale(s, s);
+  ctx.strokeStyle = "rgba(243, 244, 246, 0.08)";
+  ctx.lineWidth = 2;
+
+  ctx.beginPath();
+  ctx.moveTo(0, -45);
+  ctx.lineTo(39, -22.5);
+  ctx.lineTo(19.5, -11.25);
+  ctx.lineTo(0, -22.5);
+  ctx.lineTo(-19.5, -11.25);
+  ctx.lineTo(-39, -22.5);
+  ctx.closePath();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(-39, -22.5);
+  ctx.lineTo(-19.5, -11.25);
+  ctx.lineTo(-19.5, 11.25);
+  ctx.lineTo(0, 22.5);
+  ctx.lineTo(0, 45);
+  ctx.lineTo(-39, 22.5);
+  ctx.closePath();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(39, -22.5);
+  ctx.lineTo(19.5, -11.25);
+  ctx.lineTo(19.5, 11.25);
+  ctx.lineTo(0, 22.5);
+  ctx.lineTo(0, 45);
+  ctx.lineTo(39, 22.5);
+  ctx.closePath();
+  ctx.stroke();
+
+  ctx.restore();
 }
