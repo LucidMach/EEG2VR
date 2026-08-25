@@ -7,6 +7,7 @@ export interface DashboardRenderState {
   selectedChannel: ElectrodeName | null;
   speed: number;
   isPaused: boolean;
+  hoverUv?: { x: number; y: number } | null;
 }
 
 export interface InteractiveHitArea {

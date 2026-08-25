@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useRef } from "react";
 import type { ElectrodeName, Frame } from "../../../utils/signalSource";
 import type { HistorySample } from "../../../hooks/usePlaybackEngine";
+import type { InteractiveHitArea } from "./types";
 import { useXRDashboardTexture } from "./useXRDashboardTexture";
 import { useXRDashboardInteraction } from "./useXRDashboardInteraction";
 import XRDashboardMesh from "./XRDashboardMesh";
@@ -28,27 +29,34 @@ export const XRDashboard: React.FC<XRDashboardProps> = ({
   onSetSpeed,
   onExitXR,
 }) => {
-  const { texture, hitAreasRef } = useXRDashboardTexture({
+  const hitAreasRef = useRef<InteractiveHitArea[]>([]);
+
+  const { handlePointerDown, handlePointerMove, handlePointerOut, hoverUvRef } =
+    useXRDashboardInteraction({
+      hitAreasRef,
+      onTrialSelect,
+      onTogglePlayPause,
+      onSetSpeed,
+      onExitXR,
+      speed,
+    });
+
+  const { texture } = useXRDashboardTexture({
     frameRef,
     historiesRef,
     selectedChannel,
     speed,
     isPaused,
-  });
-
-  const { handlePointerDown } = useXRDashboardInteraction({
+    hoverUvRef,
     hitAreasRef,
-    onTrialSelect,
-    onTogglePlayPause,
-    onSetSpeed,
-    onExitXR,
-    speed,
   });
 
   return (
     <XRDashboardMesh
       texture={texture}
       onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerOut={handlePointerOut}
     />
   );
 };

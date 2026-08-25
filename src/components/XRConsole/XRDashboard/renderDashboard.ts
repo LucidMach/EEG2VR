@@ -3,6 +3,7 @@ import { drawOscilloscopes } from "./drawOscilloscopes";
 import { drawFocusDial } from "./drawFocusDial";
 import { drawChannelTelemetry } from "./drawChannelTelemetry";
 import { drawTrialTimeline } from "./drawTrialTimeline";
+import { drawPointerReticle } from "./drawPointerReticle";
 import type { DashboardRenderState, InteractiveHitArea } from "./types";
 
 export const CANVAS_WIDTH = 1400;
@@ -56,6 +57,11 @@ export function renderDashboard(
     },
     hitAreas
   );
+
+  // 7. Draw High-Contrast Pointer Reticle if hovering over dashboard
+  if (state.hoverUv) {
+    drawPointerReticle(ctx, state.hoverUv, CANVAS_WIDTH, CANVAS_HEIGHT);
+  }
 
   return hitAreas;
 }

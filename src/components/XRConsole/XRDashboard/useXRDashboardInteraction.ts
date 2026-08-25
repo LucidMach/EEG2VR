@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type { ThreeEvent } from "@react-three/fiber";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "./renderDashboard";
 import type { InteractiveHitArea } from "./types";
@@ -19,11 +20,21 @@ export function useXRDashboardInteraction({
   onExitXR,
   speed = 1,
 }: UseXRDashboardInteractionParams) {
+  const hoverUvRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
+    if (!e.uv) return;
+    hoverUvRef.current = { x: e.uv.x, y: e.uv.y };
+  };
+
+  const handlePointerOut = () => {
+    hoverUvRef.current = null;
+  };
+
   const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (!e.uv) return;
     e.stopPropagation();
 
-    // Map UV coordinates (0..1) to Canvas pixel coordinates
     const canvasX = e.uv.x * CANVAS_WIDTH;
     const canvasY = (1 - e.uv.y) * CANVAS_HEIGHT;
 
@@ -49,5 +60,5 @@ export function useXRDashboardInteraction({
     }
   };
 
-  return { handlePointerDown };
+  return { handlePointerDown, handlePointerMove, handlePointerOut, hoverUvRef };
 }

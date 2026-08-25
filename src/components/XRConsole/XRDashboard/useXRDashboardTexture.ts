@@ -12,6 +12,8 @@ interface UseXRDashboardTextureParams {
   selectedChannel: ElectrodeName | null;
   speed: number;
   isPaused: boolean;
+  hoverUvRef?: React.RefObject<{ x: number; y: number } | null>;
+  hitAreasRef?: React.RefObject<InteractiveHitArea[]>;
 }
 
 export function useXRDashboardTexture({
@@ -20,10 +22,13 @@ export function useXRDashboardTexture({
   selectedChannel,
   speed,
   isPaused,
+  hoverUvRef,
+  hitAreasRef: externalHitAreasRef,
 }: UseXRDashboardTextureParams) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const textureRef = useRef<THREE.CanvasTexture | null>(null);
-  const hitAreasRef = useRef<InteractiveHitArea[]>([]);
+  const internalHitAreasRef = useRef<InteractiveHitArea[]>([]);
+  const hitAreasRef = externalHitAreasRef || internalHitAreasRef;
   const lastDrawTimeRef = useRef<number>(0);
 
   if (!canvasRef.current && typeof document !== "undefined") {
@@ -58,8 +63,8 @@ export function useXRDashboardTexture({
     if (!ctx) return;
 
     const now = performance.now();
-    // Render at up to 30 FPS inside VR to conserve GPU/CPU cycles
-    if (now - lastDrawTimeRef.current < 33) return;
+    const minInterval = hoverUvRef?.current ? 25 : 33;
+    if (now - lastDrawTimeRef.current < minInterval) return;
     lastDrawTimeRef.current = now;
 
     const frame = frameRef.current;
@@ -71,6 +76,7 @@ export function useXRDashboardTexture({
       selectedChannel,
       speed,
       isPaused,
+      hoverUv: hoverUvRef?.current,
     });
 
     hitAreasRef.current = hitAreas;
