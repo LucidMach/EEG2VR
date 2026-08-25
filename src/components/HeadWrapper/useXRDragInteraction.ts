@@ -60,12 +60,16 @@ export function useXRDragInteraction({ gl, groupRef }: Params) {
       .copy(e.ray.origin)
       .addScaledVector(e.ray.direction, dragDistanceRef.current)
       .add(_rotatedOffset);
-    groupRef.current.position.copy(_newPos);
-    xrPositionRef.current.copy(_newPos);
 
-    _newQuat.multiplyQuaternions(_qDiff, dragStartQuatRef.current);
-    groupRef.current.quaternion.copy(_newQuat);
-    xrRotationRef.current.copy(_newQuat);
+    // Only commit to full displacement if moved beyond small deadzone
+    if (_newPos.distanceTo(xrPositionRef.current) > 0.015) {
+      groupRef.current.position.copy(_newPos);
+      xrPositionRef.current.copy(_newPos);
+
+      _newQuat.multiplyQuaternions(_qDiff, dragStartQuatRef.current);
+      groupRef.current.quaternion.copy(_newQuat);
+      xrRotationRef.current.copy(_newQuat);
+    }
   };
 
   const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {

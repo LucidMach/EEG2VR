@@ -70,11 +70,12 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
           rotation={[Math.PI / 32, 0, 0]}
         />
       </group>
-      {/* Render 3D Floating Console in WebXR Mode only */}
+      {/* Render 3D Spatial Dashboard in WebXR Mode only */}
       <XRConsole
         frameRef={frameRef}
         historiesRef={historiesRef}
         selectedChannel={selectedChannel}
+        onChannelSelect={onChannelSelect}
         onStartDemo={onStartDemo}
         onStartLive={onStartLive}
         onTrialSelect={onTrialSelect}

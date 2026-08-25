@@ -2,6 +2,7 @@
 // (rendered twice, solid behind the headset and outlined in front of it) and
 // the bottom call-to-action buttons. Only ever shown in idle mode.
 import React from "react";
+import { xrStore } from "../utils/xrStore";
 
 interface SpannedTextProps {
   text: string;
@@ -46,16 +47,28 @@ interface IdleActionsProps {
 export const IdleActions: React.FC<IdleActionsProps> = ({ onStartDemo, onStartLive }) => (
   <div className="absolute inset-x-0 bottom-6 flex flex-col items-center justify-center z-30 px-6">
     <div className="backdrop-blur-md">
-      <div className="flex flex-col gap-2">
-        <button
-          onClick={onStartDemo}
-          className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3.5 px-6 rounded-full transition-all shadow-md active:scale-[0.99]"
-        >
-          Run Demo Mode
-        </button>
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onStartDemo}
+            className="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-full transition-all shadow-md active:scale-[0.99] cursor-pointer"
+          >
+            Run Demo Mode
+          </button>
+          <button
+            onClick={() => xrStore.enterVR()}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-5 rounded-full transition-all shadow-md active:scale-[0.99] cursor-pointer"
+            title="Enter Immersive WebXR Mode"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21 7H3a2 2 0 00-2 2v6a2 2 0 002 2h4l2 2h6l2-2h4a2 2 0 002-2V9a2 2 0 00-2-2zM7.5 13a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm9 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" />
+            </svg>
+            Enter VR
+          </button>
+        </div>
         <button
           onClick={onStartLive}
-          className="text-slate-600 hover:text-slate-700 text-sm font-semibold mt-1 transition-colors hover:underline"
+          className="text-slate-600 hover:text-slate-700 text-sm font-semibold mt-1 transition-colors hover:underline cursor-pointer"
         >
           Connect your EEG headset
         </button>

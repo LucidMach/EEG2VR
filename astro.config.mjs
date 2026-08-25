@@ -42,7 +42,7 @@ server: { host: true },
         }
       }
     },
-    oxc: {
+    esbuild: {
       drop: ['console', 'debugger'],
       legalComments: 'none'
     },
