@@ -46,29 +46,31 @@ interface IdleActionsProps {
 
 export const IdleActions: React.FC<IdleActionsProps> = ({ onStartDemo, onStartLive }) => (
   <div className="absolute inset-x-0 bottom-6 flex flex-col items-center justify-center z-30 px-6">
-    <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/60 p-2 sm:p-2.5 rounded-full shadow-2xl">
-      <div className="flex items-center gap-2 sm:gap-3">
-        <button
-          onClick={onStartDemo}
-          className="bg-slate-800/90 hover:bg-slate-700/90 text-white font-bold py-2.5 px-5 sm:px-6 rounded-full transition-all shadow-md active:scale-[0.99] border border-slate-600/50 backdrop-blur-md cursor-pointer text-sm"
-        >
-          Run Demo Mode
-        </button>
-        <button
-          onClick={() => xrStore.enterVR()}
-          className="flex items-center gap-1.5 sm:gap-2 bg-indigo-600/90 hover:bg-indigo-500/90 text-white font-bold py-2.5 px-4 sm:px-5 rounded-full transition-all shadow-md active:scale-[0.99] border border-indigo-400/50 backdrop-blur-md cursor-pointer text-sm"
-          title="Enter Immersive WebXR Mode"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M21 7H3a2 2 0 00-2 2v6a2 2 0 002 2h4l2 2h6l2-2h4a2 2 0 002-2V9a2 2 0 00-2-2zM7.5 13a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm9 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" />
-          </svg>
-          Enter VR
-        </button>
+    <div className="backdrop-blur-md">
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onStartDemo}
+            className="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-full transition-all shadow-md active:scale-[0.99] cursor-pointer"
+          >
+            Run Demo Mode
+          </button>
+          <button
+            onClick={() => xrStore.enterVR()}
+            className="flex items-center justify-center w-12 h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-lg hover:shadow-indigo-500/30 active:scale-95 transition-all cursor-pointer border border-indigo-400/40 group"
+            title="Enter VR"
+            aria-label="Enter VR"
+          >
+            <svg className="w-5 h-5 fill-current transition-transform duration-200 group-hover:scale-110" viewBox="0 0 24 24">
+              <path d="M21 7H3a2 2 0 00-2 2v6a2 2 0 002 2h4l2 2h6l2-2h4a2 2 0 002-2V9a2 2 0 00-2-2zM7.5 13a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm9 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" />
+            </svg>
+          </button>
+        </div>
         <button
           onClick={onStartLive}
-          className="text-slate-300 hover:text-white text-xs font-semibold px-3 py-2 rounded-full transition-colors hover:bg-slate-800/50 cursor-pointer hidden sm:block"
+          className="text-slate-600 hover:text-slate-700 text-sm font-semibold mt-1 transition-colors hover:underline cursor-pointer"
         >
-          Connect EEG
+          Connect your EEG headset
         </button>
       </div>
     </div>

@@ -26,6 +26,7 @@ interface SceneProps {
   onSetSpeed?: (speed: number) => void;
   speed?: number;
   isPaused?: boolean;
+  audioError?: boolean;
 }
 
 const Scene: React.FC<SceneProps> = ({
@@ -40,6 +41,7 @@ const Scene: React.FC<SceneProps> = ({
   onSetSpeed,
   speed,
   isPaused,
+  audioError = false,
 }) => (
   <Canvas
     shadows
@@ -70,6 +72,7 @@ const Scene: React.FC<SceneProps> = ({
         onSetSpeed={onSetSpeed}
         speed={speed}
         isPaused={isPaused}
+        audioError={audioError}
       />
     </XR>
 

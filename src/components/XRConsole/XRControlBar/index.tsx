@@ -15,6 +15,7 @@ interface XRControlBarProps {
   onTogglePlayPause?: () => void;
   onSetSpeed?: (speed: number) => void;
   onExitXR?: () => void;
+  audioError?: boolean;
 }
 
 const TOTAL_TRIALS = 40;
@@ -31,6 +32,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   onTogglePlayPause,
   onSetSpeed,
   onExitXR,
+  audioError = false,
 }) => {
   const frame = frameRef.current;
   const currentTrial = frame?.trialIndex ?? 0;
@@ -43,11 +45,10 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   const cardWidth = 0.78;
   const cardHeight = 0.31;
   const cardShape = useMemo(() => createPillShape(cardWidth, cardHeight, 0.035), []);
-
-  const cardOutlineGeometry = useMemo(() => {
-    const points = cardShape.getPoints(32);
-    return new THREE.BufferGeometry().setFromPoints(points);
-  }, [cardShape]);
+  const cardOutlineGeo = useMemo(
+    () => new THREE.BufferGeometry().setFromPoints(cardShape.getPoints(48)),
+    [cardShape]
+  );
 
   const handlePrev = () => {
     if (currentTrial > 0) {
@@ -94,9 +95,9 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
         />
       </mesh>
 
-      {/* Outermost Perimeter Contour Loop (no internal triangulation) */}
-      <lineLoop geometry={cardOutlineGeometry} position={[0, 0, -0.004]}>
-        <lineBasicMaterial color="#334155" transparent opacity={0.5} />
+      {/* Outermost Wireframe Border (clean single boundary line, no diagonal crystal facets) */}
+      <lineLoop geometry={cardOutlineGeo} position={[0, 0, -0.004]}>
+        <lineBasicMaterial color="#334155" transparent opacity={0.6} />
       </lineLoop>
 
       {/* 2. Top Header Row: Trial info, Phase pill, Exit button */}
@@ -246,8 +247,18 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
             AUDITORY STIMULI INFORMATION
           </Text>
 
-          {/* Valence & Arousal Telemetry */}
-          {frame?.ratings ? (
+          {/* Valence & Arousal Telemetry or Audio Error Warning */}
+          {audioError ? (
+            <Text
+              position={[0, -0.009, 0.002]}
+              fontSize={0.0105}
+              color="#f87171"
+              anchorX="center"
+              anchorY="middle"
+            >
+              {`● Audio File Not Found · ${frame?.ratings ? `Val: ${frame.ratings.valence.toFixed(1)} Aro: ${frame.ratings.arousal.toFixed(1)}` : "Neutral"}`}
+            </Text>
+          ) : frame?.ratings ? (
             <Text
               position={[0, -0.009, 0.002]}
               fontSize={0.012}

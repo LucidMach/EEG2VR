@@ -27,6 +27,7 @@ interface HeadWrapperProps {
   onExitXR?: () => void;
   speed?: number;
   isPaused?: boolean;
+  audioError?: boolean;
 }
 
 const HeadWrapper: React.FC<HeadWrapperProps> = ({
@@ -42,6 +43,7 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
   onExitXR,
   speed = 1,
   isPaused = false,
+  audioError = false,
 }) => {
   const { gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
@@ -84,6 +86,7 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
         onExitXR={handleExitXR}
         speed={speed}
         isPaused={isPaused}
+        audioError={audioError}
       />
     </group>
   );

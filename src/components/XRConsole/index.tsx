@@ -5,6 +5,7 @@ import { useConsoleSnapshot } from "./useConsoleSnapshot";
 import IdleActionsXR from "./IdleActionsXR";
 import XRCylinderWall from "./XRCylinderWall";
 import XRControlBar from "./XRControlBar";
+import XRAudioErrorAlert from "./XRAudioErrorAlert";
 
 interface XRConsoleProps {
   frameRef: React.RefObject<Frame>;
@@ -19,6 +20,7 @@ interface XRConsoleProps {
   onExitXR?: () => void;
   speed?: number;
   isPaused?: boolean;
+  audioError?: boolean;
 }
 
 const XRConsole: React.FC<XRConsoleProps> = ({
@@ -34,6 +36,7 @@ const XRConsole: React.FC<XRConsoleProps> = ({
   onExitXR,
   speed = 1,
   isPaused = false,
+  audioError = false,
 }) => {
   const snapshot = useConsoleSnapshot(frameRef, selectedChannel);
 
@@ -52,7 +55,10 @@ const XRConsole: React.FC<XRConsoleProps> = ({
 
   return (
     <group>
-      {/* 1. Immersive 21-Channel Oscilloscope Cylinder Wall Surrounding User (Active in Demo/Live Mode) */}
+      {/* 1. Spatial Floating Audio Error Alert (active if trial audio file is missing) */}
+      <XRAudioErrorAlert audioError={audioError} />
+
+      {/* 2. Immersive 21-Channel Oscilloscope Cylinder Wall Surrounding User (Active in Demo/Live Mode) */}
       <XRCylinderWall
         frameRef={frameRef}
         historiesRef={historiesRef}
@@ -60,7 +66,7 @@ const XRConsole: React.FC<XRConsoleProps> = ({
         onChannelSelect={onChannelSelect}
       />
 
-      {/* 2. Spatial Trial Navigation & Playback Controls with Focus Telemetry Below Headset */}
+      {/* 3. Spatial Trial Navigation & Playback Controls with Telemetry Below Headset */}
       <XRControlBar
         frameRef={frameRef}
         selectedChannel={selectedChannel}
@@ -70,6 +76,7 @@ const XRConsole: React.FC<XRConsoleProps> = ({
         onTogglePlayPause={onTogglePlayPause}
         onSetSpeed={onSetSpeed}
         onExitXR={onExitXR}
+        audioError={audioError}
       />
     </group>
   );

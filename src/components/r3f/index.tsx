@@ -55,6 +55,7 @@ const R3F: React.FC = () => {
               onSetSpeed={engine.setSpeed}
               speed={engine.speed}
               isPaused={engine.isPaused}
+              audioError={engine.audioError}
             />
           </Suspense>
         </div>

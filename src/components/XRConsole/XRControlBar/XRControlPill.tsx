@@ -33,9 +33,9 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
     [width, height]
   );
 
-  // Single continuous outermost perimeter loop (no internal triangulation)
+  // Smooth outermost contour geometry (no internal triangulation diagonals)
   const outlineGeometry = useMemo(() => {
-    const points = pillShape.getPoints(24);
+    const points = pillShape.getPoints(32);
     return new THREE.BufferGeometry().setFromPoints(points);
   }, [pillShape]);
 
@@ -52,28 +52,28 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
       case "active-baseline":
         return {
           bg: hovered ? "#4338ca" : "#4f46e5",
-          border: "#a5b4fc",
+          border: hovered ? "#c7d2fe" : "#818cf8",
           text: "#ffffff",
           glow: "#6366f1",
         };
       case "active-stimulus":
         return {
           bg: hovered ? "#047857" : "#059669",
-          border: "#6ee7b7",
+          border: hovered ? "#a7f3d0" : "#34d399",
           text: "#ffffff",
           glow: "#10b981",
         };
       case "danger":
         return {
           bg: hovered ? "#dc2626" : "#991b1b",
-          border: "#fca5a5",
+          border: hovered ? "#fecaca" : "#f87171",
           text: "#fee2e2",
           glow: "#ef4444",
         };
       case "primary":
         return {
           bg: hovered ? "#334155" : "#1e293b",
-          border: "#94a3b8",
+          border: hovered ? "#cbd5e1" : "#64748b",
           text: "#ffffff",
           glow: "#64748b",
         };
@@ -82,7 +82,7 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
       default:
         return {
           bg: hovered ? "#1e293b" : "#0f172a",
-          border: "#38bdf8",
+          border: hovered ? "#38bdf8" : "#334155",
           text: hovered ? "#38bdf8" : "#e2e8f0",
           glow: hovered ? "#0284c7" : "#000000",
         };
@@ -118,31 +118,29 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
     >
-      {/* Frosted Translucent Pill Base */}
+      {/* 1. Button Base */}
       <mesh position={[0, 0, zElev]}>
         <shapeGeometry args={[pillShape]} />
         <meshStandardMaterial
           color={colors.bg}
-          roughness={0.25}
-          metalness={0.15}
-          transparent
-          opacity={0.92}
+          roughness={0.2}
+          metalness={0.2}
           emissive={colors.glow}
           emissiveIntensity={hovered ? 0.35 : 0.05}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Outermost Perimeter Contour Only (no internal diagonal crystal lines) */}
-      <lineLoop geometry={outlineGeometry} position={[0, 0, zElev + 0.001]}>
+      {/* 2. Outermost Wireframe Outline (highlights ONLY the outer boundary perimeter) */}
+      <lineLoop geometry={outlineGeometry} position={[0, 0, zElev + 0.002]}>
         <lineBasicMaterial
-          color={hovered && !disabled ? colors.border : "#334155"}
+          color={colors.border}
           transparent
-          opacity={hovered && !disabled ? 0.95 : 0.4}
+          opacity={hovered ? 1.0 : 0.4}
         />
       </lineLoop>
 
-      {/* Button Label */}
+      {/* 3. Button Label */}
       <Text
         position={[0, 0, zElev + 0.004]}
         fontSize={fontSize}
