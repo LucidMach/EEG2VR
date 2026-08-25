@@ -44,6 +44,11 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   const cardHeight = 0.31;
   const cardShape = useMemo(() => createPillShape(cardWidth, cardHeight, 0.035), []);
 
+  const cardOutlineGeometry = useMemo(() => {
+    const points = cardShape.getPoints(32);
+    return new THREE.BufferGeometry().setFromPoints(points);
+  }, [cardShape]);
+
   const handlePrev = () => {
     if (currentTrial > 0) {
       onTrialSelect?.(currentTrial - 1);
@@ -89,17 +94,10 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
         />
       </mesh>
 
-      {/* Frosted Glass Rim */}
-      <mesh position={[0, 0, -0.005]}>
-        <shapeGeometry args={[cardShape]} />
-        <meshBasicMaterial
-          color="#334155"
-          wireframe
-          wireframeLinewidth={1}
-          transparent
-          opacity={0.4}
-        />
-      </mesh>
+      {/* Outermost Perimeter Contour Loop (no internal triangulation) */}
+      <lineLoop geometry={cardOutlineGeometry} position={[0, 0, -0.004]}>
+        <lineBasicMaterial color="#334155" transparent opacity={0.5} />
+      </lineLoop>
 
       {/* 2. Top Header Row: Trial info, Phase pill, Exit button */}
       {/* Current Trial Readout */}

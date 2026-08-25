@@ -27,10 +27,17 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
   position = [0, 0, 0],
 }) => {
   const [hovered, setHovered] = useState(false);
+
   const pillShape = useMemo(
     () => createPillShape(width, height, height / 2),
     [width, height]
   );
+
+  // Single continuous outermost perimeter loop (no internal triangulation)
+  const outlineGeometry = useMemo(() => {
+    const points = pillShape.getPoints(24);
+    return new THREE.BufferGeometry().setFromPoints(points);
+  }, [pillShape]);
 
   const colors = useMemo(() => {
     if (disabled) {
@@ -45,28 +52,28 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
       case "active-baseline":
         return {
           bg: hovered ? "#4338ca" : "#4f46e5",
-          border: hovered ? "#a5b4fc" : "#6366f1",
+          border: "#a5b4fc",
           text: "#ffffff",
           glow: "#6366f1",
         };
       case "active-stimulus":
         return {
           bg: hovered ? "#047857" : "#059669",
-          border: hovered ? "#6ee7b7" : "#10b981",
+          border: "#6ee7b7",
           text: "#ffffff",
           glow: "#10b981",
         };
       case "danger":
         return {
           bg: hovered ? "#dc2626" : "#991b1b",
-          border: hovered ? "#fca5a5" : "#ef4444",
+          border: "#fca5a5",
           text: "#fee2e2",
           glow: "#ef4444",
         };
       case "primary":
         return {
           bg: hovered ? "#334155" : "#1e293b",
-          border: hovered ? "#94a3b8" : "#475569",
+          border: "#94a3b8",
           text: "#ffffff",
           glow: "#64748b",
         };
@@ -75,7 +82,7 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
       default:
         return {
           bg: hovered ? "#1e293b" : "#0f172a",
-          border: hovered ? "#38bdf8" : "#334155",
+          border: "#38bdf8",
           text: hovered ? "#38bdf8" : "#e2e8f0",
           glow: hovered ? "#0284c7" : "#000000",
         };
@@ -102,7 +109,7 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
     onClick?.(e);
   };
 
-  const zElev = hovered && !disabled ? 0.006 : 0;
+  const zElev = hovered && !disabled ? 0.005 : 0;
 
   return (
     <group
@@ -111,30 +118,29 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
     >
-      {/* Button Base */}
+      {/* Frosted Translucent Pill Base */}
       <mesh position={[0, 0, zElev]}>
         <shapeGeometry args={[pillShape]} />
         <meshStandardMaterial
           color={colors.bg}
-          roughness={0.2}
-          metalness={0.2}
+          roughness={0.25}
+          metalness={0.15}
+          transparent
+          opacity={0.92}
           emissive={colors.glow}
           emissiveIntensity={hovered ? 0.35 : 0.05}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Glowing Hover Border Ring */}
-      {hovered && !disabled && (
-        <mesh position={[0, 0, zElev + 0.001]}>
-          <shapeGeometry args={[pillShape]} />
-          <meshBasicMaterial
-            color={colors.border}
-            wireframe
-            wireframeLinewidth={2}
-          />
-        </mesh>
-      )}
+      {/* Outermost Perimeter Contour Only (no internal diagonal crystal lines) */}
+      <lineLoop geometry={outlineGeometry} position={[0, 0, zElev + 0.001]}>
+        <lineBasicMaterial
+          color={hovered && !disabled ? colors.border : "#334155"}
+          transparent
+          opacity={hovered && !disabled ? 0.95 : 0.4}
+        />
+      </lineLoop>
 
       {/* Button Label */}
       <Text
