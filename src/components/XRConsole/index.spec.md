@@ -4,4 +4,4 @@ Floating 3D control board mounted by [[../HeadWrapper/index|HeadWrapper]], visib
 
 **Props**: `frameRef`, `historiesRef`, `selectedChannel`, `onStartDemo`, `onStartLive`, `onTrialSelect`, `onTogglePlayPause`, `onSetSpeed`, `speed`, `isPaused`.
 
-Delegates state tracking to [[useConsoleSnapshot]], rendering [[IdleActionsXR]] when idle, [[XRDashboard]] when in Demo Mode, and [[ConsolePanel]] during quality-check; returns `null` (mounts nothing) whenever the snapshot says we're not in VR.
+Delegates state tracking to [[useConsoleSnapshot]] for the idle/in-VR gate. Renders [[IdleActionsXR]] alone on the homescreen (idle phase); otherwise renders [[XRAudioErrorAlert]], the [[XRCylinderWall]] telemetry wall, and the [[XRControlBar]] trial/playback console together. Returns `null` (mounts nothing) whenever the snapshot says we're not in VR.
