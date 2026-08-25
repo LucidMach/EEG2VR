@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
+import * as THREE from "three";
 import { Text } from "@react-three/drei";
 import type { Frame, ElectrodeName } from "../../../utils/signalSource";
 import { formatTime } from "../../TrialProgressBar/formatTime";
+import { createPillShape } from "../pillShape";
 import XRControlPill from "./XRControlPill";
 
 interface XRControlBarProps {
@@ -36,6 +38,8 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   const currentFocus = frame?.focus !== undefined && frame?.focus !== null ? frame.focus : null;
   const focusAvg = frame?.focus_avg;
 
+  const cardShape = useMemo(() => createPillShape(0.72, 0.22, 0.04), []);
+
   const handlePrev = () => {
     if (currentTrial > 0) {
       onTrialSelect?.(currentTrial - 1);
@@ -57,13 +61,36 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
 
   return (
     <group position={[0, 0.84, -1.05]} rotation={[-Math.PI / 6, 0, 0]}>
-      {/* (No background plate/color - completely clean floating controls) */}
+      {/* 1. Frosted Translucent Backing Card for High Contrast */}
+      <mesh position={[0, 0, -0.006]}>
+        <shapeGeometry args={[cardShape]} />
+        <meshStandardMaterial
+          color="#090d16"
+          roughness={0.25}
+          metalness={0.2}
+          transparent
+          opacity={0.88}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
 
-      {/* 1. Top Status Row */}
+      {/* Subtle Frosted Glass Rim */}
+      <mesh position={[0, 0, -0.005]}>
+        <shapeGeometry args={[cardShape]} />
+        <meshBasicMaterial
+          color="#334155"
+          wireframe
+          wireframeLinewidth={1}
+          transparent
+          opacity={0.4}
+        />
+      </mesh>
+
+      {/* 2. Top Status Row */}
       {/* Current Trial Readout */}
       <Text
-        position={[-0.24, 0.08, 0]}
-        fontSize={0.017}
+        position={[-0.24, 0.068, 0.004]}
+        fontSize={0.016}
         color="#ffffff"
         anchorX="left"
         anchorY="middle"
@@ -72,7 +99,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
       </Text>
 
       {/* Phase Badge */}
-      <group position={[0, 0.08, 0]}>
+      <group position={[0, 0.068, 0.004]}>
         <Text
           fontSize={0.013}
           color={phaseColor}
@@ -85,7 +112,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
 
       {/* Elapsed Time Counter */}
       <Text
-        position={[0.13, 0.08, 0]}
+        position={[0.13, 0.068, 0.004]}
         fontSize={0.013}
         color="#94a3b8"
         anchorX="left"
@@ -102,15 +129,21 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
         height={0.028}
         fontSize={0.01}
         variant="danger"
-        position={[0.28, 0.08, 0]}
+        position={[0.28, 0.068, 0.004]}
       />
 
-      {/* 2. Focus Metrics in space above the pause / playback buttons */}
-      <group position={[0, 0.028, 0]}>
+      {/* Divider Line */}
+      <mesh position={[0, 0.046, 0.002]}>
+        <planeGeometry args={[0.64, 0.001]} />
+        <meshBasicMaterial color="#1e293b" transparent opacity={0.6} />
+      </mesh>
+
+      {/* 3. Focus Metrics in space above the pause / playback buttons */}
+      <group position={[0, 0.022, 0.004]}>
         {/* Main Focus Metric & Running Average */}
         <Text
           position={frame?.ratings ? [-0.08, 0, 0] : [0, 0, 0]}
-          fontSize={0.019}
+          fontSize={0.018}
           color={phaseColor}
           anchorX="center"
           anchorY="middle"
@@ -132,8 +165,8 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
         )}
       </group>
 
-      {/* 3. Flex Row of Playback Controls */}
-      <group position={[0, -0.04, 0]}>
+      {/* 4. Flex Row of Playback Controls */}
+      <group position={[0, -0.038, 0.004]}>
         {/* Prev Trial Button */}
         <XRControlPill
           label="◀ Prev"
@@ -195,7 +228,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
       {/* Selected Channel Hint */}
       {selectedChannel && (
         <Text
-          position={[0, -0.088, 0]}
+          position={[0, -0.084, 0.004]}
           fontSize={0.01}
           color="#94a3b8"
           anchorX="center"

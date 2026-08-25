@@ -38,40 +38,46 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
         bg: "#0f172a",
         border: "#1e293b",
         text: "#475569",
+        glow: "#000000",
       };
     }
     switch (variant) {
       case "active-baseline":
         return {
-          bg: "#4f46e5",
-          border: "#6366f1",
+          bg: hovered ? "#4338ca" : "#4f46e5",
+          border: hovered ? "#a5b4fc" : "#6366f1",
           text: "#ffffff",
+          glow: "#6366f1",
         };
       case "active-stimulus":
         return {
-          bg: "#059669",
-          border: "#10b981",
+          bg: hovered ? "#047857" : "#059669",
+          border: hovered ? "#6ee7b7" : "#10b981",
           text: "#ffffff",
+          glow: "#10b981",
         };
       case "danger":
         return {
           bg: hovered ? "#dc2626" : "#991b1b",
-          border: hovered ? "#f87171" : "#ef4444",
+          border: hovered ? "#fca5a5" : "#ef4444",
           text: "#fee2e2",
+          glow: "#ef4444",
         };
       case "primary":
         return {
           bg: hovered ? "#334155" : "#1e293b",
-          border: hovered ? "#64748b" : "#334155",
+          border: hovered ? "#94a3b8" : "#475569",
           text: "#ffffff",
+          glow: "#64748b",
         };
       case "secondary":
       case "neutral":
       default:
         return {
           bg: hovered ? "#1e293b" : "#0f172a",
-          border: hovered ? "#475569" : "#1e293b",
-          text: hovered ? "#ffffff" : "#94a3b8",
+          border: hovered ? "#38bdf8" : "#334155",
+          text: hovered ? "#38bdf8" : "#e2e8f0",
+          glow: hovered ? "#0284c7" : "#000000",
         };
     }
   }, [variant, hovered, disabled]);
@@ -80,7 +86,7 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
     if (disabled) return;
     e.stopPropagation();
     setHovered(true);
-    triggerXRHaptic(e, 0.2, 10);
+    triggerXRHaptic(e, 0.25, 10);
   };
 
   const handlePointerOut = (e: ThreeEvent<PointerEvent>) => {
@@ -92,11 +98,11 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
   const handleClick = (e: ThreeEvent<PointerEvent>) => {
     if (disabled) return;
     e.stopPropagation();
-    triggerXRHaptic(e, 0.5, 25);
+    triggerXRHaptic(e, 0.6, 25);
     onClick?.(e);
   };
 
-  const zElev = hovered && !disabled ? 0.005 : 0;
+  const zElev = hovered && !disabled ? 0.006 : 0;
 
   return (
     <group
@@ -105,16 +111,32 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
     >
+      {/* Button Base */}
       <mesh position={[0, 0, zElev]}>
         <shapeGeometry args={[pillShape]} />
         <meshStandardMaterial
           color={colors.bg}
           roughness={0.2}
-          metalness={0.1}
+          metalness={0.2}
+          emissive={colors.glow}
+          emissiveIntensity={hovered ? 0.35 : 0.05}
           side={THREE.DoubleSide}
         />
       </mesh>
 
+      {/* Glowing Hover Border Ring */}
+      {hovered && !disabled && (
+        <mesh position={[0, 0, zElev + 0.001]}>
+          <shapeGeometry args={[pillShape]} />
+          <meshBasicMaterial
+            color={colors.border}
+            wireframe
+            wireframeLinewidth={2}
+          />
+        </mesh>
+      )}
+
+      {/* Button Label */}
       <Text
         position={[0, 0, zElev + 0.004]}
         fontSize={fontSize}

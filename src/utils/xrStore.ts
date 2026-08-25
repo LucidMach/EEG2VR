@@ -1,7 +1,24 @@
 import { createXRStore } from "@react-three/xr";
 
-// Singleton: shared between the <XR> canvas wrapper and the sidebar's
-// "Enter VR"/"Enter AR" buttons, which live in different modules.
+// WebXR Store configuration with high-visibility ray pointers and cursor models
 export const xrStore = createXRStore({
   depthSensing: false,
+  controller: {
+    rayPointer: {
+      minDistance: 0,
+      rayModel: {
+        maxLength: 10,
+      },
+      cursorModel: true,
+    },
+  },
+  hand: {
+    rayPointer: {
+      minDistance: 0,
+      rayModel: {
+        maxLength: 10,
+      },
+      cursorModel: true,
+    },
+  },
 });

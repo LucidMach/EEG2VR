@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { ElectrodeName, Frame } from "../../../utils/signalSource";
 import type { HistorySample } from "../../../hooks/usePlaybackEngine";
@@ -16,6 +17,8 @@ interface XRCylinderWallProps {
   height?: number;
 }
 
+const _lookTarget = new THREE.Vector3(0, 1.35, 0);
+
 export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
   frameRef,
   historiesRef,
@@ -26,6 +29,9 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
 }) => {
   const hitAreasRef = useRef<CylinderChannelHitArea[]>([]);
   const hoveredChannelRef = useRef<ElectrodeName | null>(null);
+  const reticleGroupRef = useRef<THREE.Group>(null);
+  const hitPointRef = useRef<THREE.Vector3 | null>(null);
+  const isHoveredRef = useRef<boolean>(false);
 
   const { texture } = useXRCylinderTexture({
     frameRef,
@@ -49,7 +55,14 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
 
   const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    if (!e.uv) return;
+    if (!e.uv || !e.point) return;
+
+    isHoveredRef.current = true;
+    if (!hitPointRef.current) {
+      hitPointRef.current = e.point.clone();
+    } else {
+      hitPointRef.current.copy(e.point);
+    }
 
     const channel = getChannelAtUV(e.uv);
     if (channel !== hoveredChannelRef.current) {
@@ -62,6 +75,7 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
 
   const handlePointerOut = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
+    isHoveredRef.current = false;
     if (hoveredChannelRef.current !== null) {
       hoveredChannelRef.current = null;
     }
@@ -78,13 +92,27 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
     }
   };
 
+  // Update visible pointer reticle position on cylinder
+  useFrame(() => {
+    const reticle = reticleGroupRef.current;
+    if (!reticle) return;
+
+    if (isHoveredRef.current && hitPointRef.current) {
+      reticle.visible = true;
+      reticle.position.copy(hitPointRef.current);
+      reticle.lookAt(_lookTarget);
+    } else {
+      reticle.visible = false;
+    }
+  });
+
   // Panoramic curved arc spanning ~160° around the user's field of view
   const thetaStart = Math.PI * 0.55;
   const thetaLength = Math.PI * 0.9;
 
   return (
     <group position={[0, 1.35, 0]}>
-      {/* 1. Clean Backing Panel for Depth & Contrast */}
+      {/* 1. Frosted Translucent Backing Panel */}
       <mesh position={[0, 0, 0]}>
         <cylinderGeometry
           args={[
@@ -98,11 +126,13 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
             thetaLength + 0.04,
           ]}
         />
-        <meshBasicMaterial
-          color="#ffffff"
+        <meshStandardMaterial
+          color="#f8fafc"
+          roughness={0.3}
+          metalness={0.1}
           side={THREE.BackSide}
           transparent
-          opacity={0.9}
+          opacity={0.96}
         />
       </mesh>
 
@@ -136,7 +166,7 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
         </mesh>
       )}
 
-      {/* 3. Subtle Clean Glass Rim Overlay */}
+      {/* 3. Subtle Glass Rim Outline */}
       <mesh position={[0, 0, 0]}>
         <cylinderGeometry
           args={[
@@ -154,13 +184,37 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
           color="#ffffff"
           roughness={0.1}
           metalness={0.05}
-          transmission={0.95}
+          transmission={0.9}
           transparent
-          opacity={0.03}
+          opacity={0.04}
           side={THREE.BackSide}
           depthWrite={false}
         />
       </mesh>
+
+      {/* 4. High-Visibility 3D Laser Pointer Reticle (shows exact hit point on cylinder) */}
+      <group ref={reticleGroupRef} visible={false}>
+        <mesh position={[0, 0, 0.01]}>
+          <ringGeometry args={[0.03, 0.042, 32]} />
+          <meshBasicMaterial
+            color="#0284c7"
+            side={THREE.DoubleSide}
+            transparent
+            opacity={0.95}
+            depthTest={false}
+          />
+        </mesh>
+        <mesh position={[0, 0, 0.01]}>
+          <circleGeometry args={[0.01, 16]} />
+          <meshBasicMaterial
+            color="#38bdf8"
+            side={THREE.DoubleSide}
+            transparent
+            opacity={1.0}
+            depthTest={false}
+          />
+        </mesh>
+      </group>
     </group>
   );
 };
