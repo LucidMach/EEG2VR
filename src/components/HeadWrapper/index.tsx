@@ -10,23 +10,36 @@ import { useThree } from "@react-three/fiber";
 import EEGHead from "../eegHead";
 import XRConsole from "../XRConsole";
 import type { ElectrodeName, Frame } from "../../utils/signalSource";
+import type { HistorySample } from "../../hooks/usePlaybackEngine";
 import { useXRDragInteraction } from "./useXRDragInteraction";
 import { useHeadPlacement } from "./useHeadPlacement";
 
 interface HeadWrapperProps {
   frameRef: React.RefObject<Frame>;
+  historiesRef?: React.RefObject<Record<ElectrodeName, HistorySample[]>>;
   selectedChannel: ElectrodeName | null;
   onChannelSelect: (name: ElectrodeName) => void;
   onStartDemo?: () => void;
   onStartLive?: () => void;
+  onTrialSelect?: (index: number, startOffset?: number) => void;
+  onTogglePlayPause?: () => void;
+  onSetSpeed?: (speed: number) => void;
+  speed?: number;
+  isPaused?: boolean;
 }
 
 const HeadWrapper: React.FC<HeadWrapperProps> = ({
   frameRef,
+  historiesRef,
   selectedChannel,
   onChannelSelect,
   onStartDemo,
   onStartLive,
+  onTrialSelect,
+  onTogglePlayPause,
+  onSetSpeed,
+  speed = 1,
+  isPaused = false,
 }) => {
   const { gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
@@ -54,9 +67,15 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
       {/* Render 3D Floating Console in WebXR Mode only */}
       <XRConsole
         frameRef={frameRef}
+        historiesRef={historiesRef}
         selectedChannel={selectedChannel}
         onStartDemo={onStartDemo}
         onStartLive={onStartLive}
+        onTrialSelect={onTrialSelect}
+        onTogglePlayPause={onTogglePlayPause}
+        onSetSpeed={onSetSpeed}
+        speed={speed}
+        isPaused={isPaused}
       />
     </group>
   );

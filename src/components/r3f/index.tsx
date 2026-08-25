@@ -45,10 +45,16 @@ const R3F: React.FC = () => {
           <Suspense fallback={null}>
             <Scene
               frameRef={engine.frameRef}
+              historiesRef={engine.historiesRef}
               selectedChannel={engine.selectedChannel}
               onChannelSelect={engine.selectChannel}
               onStartDemo={engine.startDemo}
               onStartLive={engine.startLive}
+              onTrialSelect={engine.selectTrial}
+              onTogglePlayPause={engine.togglePlayPause}
+              onSetSpeed={engine.setSpeed}
+              speed={engine.speed}
+              isPaused={engine.isPaused}
             />
           </Suspense>
         </div>

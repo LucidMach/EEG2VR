@@ -12,21 +12,34 @@ import { XR } from "@react-three/xr";
 import HeadWrapper from "./HeadWrapper";
 import { xrStore } from "../utils/xrStore";
 import type { ElectrodeName, Frame } from "../utils/signalSource";
+import type { HistorySample } from "../hooks/usePlaybackEngine";
 
 interface SceneProps {
   frameRef: React.RefObject<Frame>;
+  historiesRef?: React.RefObject<Record<ElectrodeName, HistorySample[]>>;
   selectedChannel: ElectrodeName | null;
   onChannelSelect: (name: ElectrodeName) => void;
   onStartDemo?: () => void;
   onStartLive?: () => void;
+  onTrialSelect?: (index: number, startOffset?: number) => void;
+  onTogglePlayPause?: () => void;
+  onSetSpeed?: (speed: number) => void;
+  speed?: number;
+  isPaused?: boolean;
 }
 
 const Scene: React.FC<SceneProps> = ({
   frameRef,
+  historiesRef,
   selectedChannel,
   onChannelSelect,
   onStartDemo,
   onStartLive,
+  onTrialSelect,
+  onTogglePlayPause,
+  onSetSpeed,
+  speed,
+  isPaused,
 }) => (
   <Canvas
     shadows
@@ -34,7 +47,6 @@ const Scene: React.FC<SceneProps> = ({
     style={{ background: "transparent" }}
     gl={{ alpha: true }}
   >
-
     <ambientLight intensity={Math.PI / 1.5} />
     <directionalLight
       position={[5, 10, 5]}
@@ -48,10 +60,16 @@ const Scene: React.FC<SceneProps> = ({
     <XR store={xrStore}>
       <HeadWrapper
         frameRef={frameRef}
+        historiesRef={historiesRef}
         selectedChannel={selectedChannel}
         onChannelSelect={onChannelSelect}
         onStartDemo={onStartDemo}
         onStartLive={onStartLive}
+        onTrialSelect={onTrialSelect}
+        onTogglePlayPause={onTogglePlayPause}
+        onSetSpeed={onSetSpeed}
+        speed={speed}
+        isPaused={isPaused}
       />
     </XR>
 
