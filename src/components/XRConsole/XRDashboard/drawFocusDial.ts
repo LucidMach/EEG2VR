@@ -1,4 +1,7 @@
-import { NUM_TRIALS, getAngleForIndex, isMilestone, getMilestoneLabel } from "../../TrialDial/angles";
+const NUM_TRIALS = 40;
+const getAngleForIndex = (i: number) => (i / NUM_TRIALS) * 360;
+const isMilestone = (i: number) => (i + 1) % 5 === 0 || i === 0;
+const getMilestoneLabel = (i: number) => String(i + 1);
 import type { DashboardRenderState } from "./types";
 
 export function drawFocusDial(

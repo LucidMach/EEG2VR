@@ -89,14 +89,14 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
     }
   }, [variant, hovered, disabled]);
 
-  const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
+  const handlePointerEnter = (e: ThreeEvent<PointerEvent>) => {
     if (disabled) return;
     e.stopPropagation();
     setHovered(true);
     triggerXRHaptic(e, 0.25, 10);
   };
 
-  const handlePointerOut = (e: ThreeEvent<PointerEvent>) => {
+  const handlePointerLeave = (e: ThreeEvent<PointerEvent>) => {
     if (disabled) return;
     e.stopPropagation();
     setHovered(false);
@@ -109,17 +109,24 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
     onClick?.(e);
   };
 
+  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
+    if (disabled) return;
+    e.stopPropagation();
+    triggerXRHaptic(e, 0.35, 15);
+  };
+
   const zElev = hovered && !disabled ? 0.005 : 0;
 
   return (
-    <group
-      position={position}
-      onClick={handleClick}
-      onPointerOver={handlePointerOver}
-      onPointerOut={handlePointerOut}
-    >
-      {/* 1. Button Base */}
-      <mesh position={[0, 0, zElev]}>
+    <group position={position}>
+      {/* 1. Button Base (Primary Raycast Target) */}
+      <mesh
+        position={[0, 0, zElev]}
+        onClick={handleClick}
+        onPointerDown={handlePointerDown}
+        onPointerEnter={handlePointerEnter}
+        onPointerLeave={handlePointerLeave}
+      >
         <shapeGeometry args={[pillShape]} />
         <meshStandardMaterial
           color={colors.bg}
@@ -131,8 +138,12 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
         />
       </mesh>
 
-      {/* 2. Outermost Wireframe Outline (highlights ONLY the outer boundary perimeter) */}
-      <lineLoop geometry={outlineGeometry} position={[0, 0, zElev + 0.002]}>
+      {/* 2. Outermost Wireframe Outline (visual only) */}
+      <lineLoop
+        geometry={outlineGeometry}
+        position={[0, 0, zElev + 0.002]}
+        raycast={() => null}
+      >
         <lineBasicMaterial
           color={colors.border}
           transparent
@@ -140,7 +151,7 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
         />
       </lineLoop>
 
-      {/* 3. Button Label */}
+      {/* 3. Button Label (visual only) */}
       <Text
         position={[0, 0, zElev + 0.004]}
         fontSize={fontSize}
@@ -148,6 +159,7 @@ export const XRControlPill: React.FC<XRControlPillProps> = ({
         anchorX="center"
         anchorY="middle"
         font={undefined}
+        raycast={() => null}
       >
         {label}
       </Text>

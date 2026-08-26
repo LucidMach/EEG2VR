@@ -83,7 +83,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   return (
     <group position={[0, 0.82, -1.05]} rotation={[-Math.PI / 6, 0, 0]}>
       {/* 1. Frosted Translucent Backing Card for High Contrast */}
-      <mesh position={[0, 0, -0.006]}>
+      <mesh position={[0, 0, -0.006]} raycast={() => null}>
         <shapeGeometry args={[cardShape]} />
         <meshStandardMaterial
           color="#090d16"
@@ -96,7 +96,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
       </mesh>
 
       {/* Outermost Wireframe Border (clean single boundary line, no diagonal crystal facets) */}
-      <lineLoop geometry={cardOutlineGeo} position={[0, 0, -0.004]}>
+      <lineLoop geometry={cardOutlineGeo} position={[0, 0, -0.004]} raycast={() => null}>
         <lineBasicMaterial color="#334155" transparent opacity={0.6} />
       </lineLoop>
 
@@ -292,7 +292,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
           width={0.098}
           height={0.044}
           fontSize={0.013}
-          variant={currentTrial > 0 ? "primary" : "neutral"}
+          variant="neutral"
           position={[-0.23, 0, 0]}
         />
 
@@ -303,7 +303,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
           width={0.108}
           height={0.044}
           fontSize={0.013}
-          variant={isPaused ? speedActiveVariant : "primary"}
+          variant={isPaused ? speedActiveVariant : "neutral"}
           position={[-0.102, 0, 0]}
         />
 
@@ -337,7 +337,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
           width={0.098}
           height={0.044}
           fontSize={0.013}
-          variant={currentTrial < TOTAL_TRIALS - 1 ? "primary" : "neutral"}
+          variant="neutral"
           position={[0.184, 0, 0]}
         />
       </group>
