@@ -26,7 +26,7 @@ const INITIAL_FRAME: Frame = idleSignalSource.getFrame(0);
 
 export function usePlaybackEngine(): PlaybackEngine {
   const [mode, setMode] = useState<AppMode>({ kind: "idle" });
-  const [selectedChannel, setSelectedChannel] = useState<ElectrodeName | null>("Cz");
+  const [selectedChannel, setSelectedChannel] = useState<ElectrodeName | null>(null);
   const [frame, setFrame] = useState<Frame>(INITIAL_FRAME);
   const [speed, setSpeed] = useState<number>(1);
   const [isPaused, setIsPaused] = useState<boolean>(false);
@@ -68,7 +68,6 @@ export function usePlaybackEngine(): PlaybackEngine {
     cancelConnectionRef,
     syncTrialAudio: audioController.syncTrialAudio,
     setMode,
-    setSelectedChannel,
     setFrame,
     setIsPaused,
   });

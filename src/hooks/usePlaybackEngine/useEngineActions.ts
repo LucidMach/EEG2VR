@@ -13,7 +13,6 @@ interface Params {
   cancelConnectionRef: RefObject<() => void>;
   syncTrialAudio: (trialIndex: number, startOffset?: number) => void;
   setMode: (mode: AppMode) => void;
-  setSelectedChannel: (name: ElectrodeName | null) => void;
   setFrame: (frame: Frame) => void;
   setIsPaused: (updater: (prev: boolean) => boolean) => void;
 }
@@ -29,7 +28,6 @@ export function useEngineActions({
   cancelConnectionRef,
   syncTrialAudio,
   setMode,
-  setSelectedChannel,
   setFrame,
   setIsPaused,
 }: Params) {
@@ -45,7 +43,6 @@ export function useEngineActions({
   const startDemo = useCallback(() => {
     cancelConnectionRef.current();
     setMode({ kind: "demo" });
-    setSelectedChannel("Cz");
   }, []);
 
   const startLive = useCallback(() => {
@@ -54,16 +51,12 @@ export function useEngineActions({
 
     cancelConnectionRef.current = simulateHeadsetConnection((progress) => {
       setMode({ kind: "live", connection: progress.step, device: progress.device });
-      if (progress.step === "connected") {
-        setSelectedChannel("Cz");
-      }
     });
   }, []);
 
   const disconnect = useCallback(() => {
     cancelConnectionRef.current();
     setMode({ kind: "idle" });
-    setSelectedChannel("Cz");
   }, []);
 
   const togglePlayPause = useCallback(() => {

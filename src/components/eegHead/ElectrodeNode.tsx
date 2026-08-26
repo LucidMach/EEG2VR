@@ -37,29 +37,39 @@ const ElectrodeNode: React.FC<ElectrodeNodeProps> = ({
 }) => {
   const ringGroupRef = useRef<THREE.Group>(null);
 
-  const { radius, ringRotation } = useMemo(() => {
-    if (!geometry.boundingSphere) {
-      geometry.computeBoundingSphere();
-    }
+  const { baseRadius, ringRotation, ringOffset } = useMemo(() => {
     if (!geometry.boundingBox) {
       geometry.computeBoundingBox();
     }
-    const r = geometry.boundingSphere?.radius ?? 0.8;
     const bb = geometry.boundingBox;
+    let r = 0.8;
     let rot: [number, number, number] = [0, 0, 0];
+    let offset: [number, number, number] = [0, 0, 0];
+
     if (bb) {
       const dx = bb.max.x - bb.min.x;
       const dy = bb.max.y - bb.min.y;
       const dz = bb.max.z - bb.min.z;
-      // If the dome axis is Y (min dimension is dy), rotate ring to lie in XZ plane
-      if (dy < dx && dy < dz) {
+
+      // Identify the dome extrusion axis (smallest dimension)
+      if (dy <= dx && dy <= dz) {
+        // Dome along Y: base lies in XZ plane
+        r = Math.max(dx, dz) / 2;
         rot = [Math.PI / 2, 0, 0];
-      } else if (dx < dy && dx < dz) {
-        // If dome axis is X, rotate ring to lie in YZ plane
+        offset = [0, bb.min.y + 0.02, 0];
+      } else if (dx <= dy && dx <= dz) {
+        // Dome along X: base lies in YZ plane
+        r = Math.max(dy, dz) / 2;
         rot = [0, Math.PI / 2, 0];
+        offset = [bb.min.x + 0.02, 0, 0];
+      } else {
+        // Dome along Z: base lies in XY plane
+        r = Math.max(dx, dy) / 2;
+        rot = [0, 0, 0];
+        offset = [0, 0, bb.min.z + 0.02];
       }
     }
-    return { radius: r, ringRotation: rot };
+    return { baseRadius: r, ringRotation: rot, ringOffset: offset };
   }, [geometry]);
 
   const region = ELECTRODE_METADATA[name]?.region;
@@ -69,8 +79,8 @@ const ElectrodeNode: React.FC<ElectrodeNodeProps> = ({
     if (!ringGroupRef.current) return;
     if (isSelected) {
       const time = state.clock.getElapsedTime();
-      const pulse = Math.sin(time * 5);
-      const s = 1.0 + 0.05 * pulse;
+      const pulse = Math.sin(time * 4);
+      const s = 1.0 + 0.04 * pulse;
       ringGroupRef.current.scale.set(s, s, s);
     } else {
       ringGroupRef.current.scale.set(1, 1, 1);
@@ -119,34 +129,36 @@ const ElectrodeNode: React.FC<ElectrodeNodeProps> = ({
         />
       </mesh>
 
-      {/* 2. Concentric Highlight Ring (Active Selection / Hover Preview) */}
+      {/* 2. Concentric Highlight Ring (Active Selection / Hover Preview) outside the LED */}
       {(isSelected || isHovered) && (
-        <group ref={ringGroupRef} rotation={ringRotation} scale={2.1}>
-          {/* 3D Glowing Torus Collar surrounding the LED base */}
-          <mesh raycast={() => null}>
-            <torusGeometry args={[radius * 1.06, radius * 0.1, 16, 32]} />
-            <meshStandardMaterial
-              color={ringColor}
-              emissive={ringColor}
-              emissiveIntensity={isSelected ? 1.6 : 0.7}
-              roughness={0.1}
-              metalness={0.2}
-              transparent
-              opacity={isSelected ? 0.95 : 0.6}
-            />
-          </mesh>
+        <group position={ringOffset} rotation={ringRotation} scale={2.1}>
+          <group ref={ringGroupRef}>
+            {/* 3D Glowing Torus Collar surrounding the LED base on the headset */}
+            <mesh raycast={() => null}>
+              <torusGeometry args={[baseRadius * 1.35, baseRadius * 0.1, 16, 32]} />
+              <meshStandardMaterial
+                color={ringColor}
+                emissive={ringColor}
+                emissiveIntensity={isSelected ? 1.8 : 0.8}
+                roughness={0.15}
+                metalness={0.2}
+                transparent
+                opacity={isSelected ? 0.95 : 0.65}
+              />
+            </mesh>
 
-          {/* Outer glowing halo ring aura */}
-          <mesh raycast={() => null}>
-            <ringGeometry args={[radius * 1.14, radius * 1.42, 32]} />
-            <meshBasicMaterial
-              color={ringColor}
-              side={THREE.DoubleSide}
-              transparent
-              opacity={isSelected ? 0.55 : 0.28}
-              depthWrite={false}
-            />
-          </mesh>
+            {/* Outer glowing halo disc aura extending onto headset surface */}
+            <mesh raycast={() => null}>
+              <ringGeometry args={[baseRadius * 1.45, baseRadius * 2.2, 32]} />
+              <meshBasicMaterial
+                color={ringColor}
+                side={THREE.DoubleSide}
+                transparent
+                opacity={isSelected ? 0.5 : 0.25}
+                depthWrite={false}
+              />
+            </mesh>
+          </group>
         </group>
       )}
     </group>

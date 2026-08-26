@@ -8,7 +8,8 @@ Positions/rotations came from the Blender export and are not derived from
 anything else in the codebase — treat them as fixture data, not something to
 recompute.
 
-Also exports `ELECTRODE_FOCUS_QUATERNIONS` (precomputed spherical focus
-quaternions aligning each electrode vector to the front +Z axis with zero roll)
+Also exports `ELECTRODE_FOCUS_QUATERNIONS` (precomputed focus
+quaternions aligning each electrode's normal/halo directly facing the camera with zero roll relative to head center offset `y ~ 2.8`)
 and `DEFAULT_HEADSET_QUATERNION`.
+
 

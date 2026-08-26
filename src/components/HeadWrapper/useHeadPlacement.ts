@@ -66,8 +66,8 @@ export function useHeadPlacement({
       // Model height is approx 22 units in Blender local space.
       const targetScale = state.viewport.height / 66;
 
-      if (isIdleShowcase) {
-        // Slow showcase spin plus a subtle bobbing motion.
+      if (isIdleShowcase && !selectedChannel) {
+        // Slow showcase spin plus a subtle bobbing motion when no channel is selected.
         group.rotation.y = time * 0.15;
         group.rotation.x = Math.sin(time * 0.4) * 0.05 + Math.PI / 32;
         group.rotation.z = 0;

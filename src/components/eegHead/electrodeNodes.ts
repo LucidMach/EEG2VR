@@ -36,17 +36,21 @@ export const ELECTRODE_NODE_PLACEMENTS: ElectrodeNodePlacement[] = [
 ];
 
 // Precomputed map of focus quaternions for each electrode.
-// Rotates the headset such that the target electrode points directly along +Z
-// (facing the camera / user) with zero roll for an upright presentation.
+// Rotates the headset such that the target electrode and its halo face directly
+// toward the camera/user with zero roll for an upright presentation.
+// Head center is offset at y ~ 2.8 on the digital twin coordinate space.
 export const ELECTRODE_FOCUS_QUATERNIONS: Record<ElectrodeName, THREE.Quaternion> = (() => {
+  const HEAD_CENTER_Y = 2.8;
+  const CAMERA_PITCH = Math.PI / 32;
   const map = {} as Record<ElectrodeName, THREE.Quaternion>;
   for (const placement of ELECTRODE_NODE_PLACEMENTS) {
     const [x, y, z] = placement.position;
+    const dy = y - HEAD_CENTER_Y;
     const theta = Math.atan2(x, z);
     const rxz = Math.sqrt(x * x + z * z);
-    const phi = Math.atan2(y, rxz);
+    const phi = Math.atan2(dy, rxz);
     map[placement.name] = new THREE.Quaternion().setFromEuler(
-      new THREE.Euler(phi, -theta, 0, "YXZ")
+      new THREE.Euler(phi + CAMERA_PITCH, -theta, 0, "YXZ")
     );
   }
   return map;
