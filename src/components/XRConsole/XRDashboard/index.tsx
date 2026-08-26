@@ -13,6 +13,7 @@ export interface XRDashboardProps {
   speed?: number;
   isPaused?: boolean;
   onTrialSelect?: (index: number, startOffset?: number) => void;
+  onChannelSelect?: (name: ElectrodeName) => void;
   onTogglePlayPause?: () => void;
   onSetSpeed?: (speed: number) => void;
   onExitXR?: () => void;
@@ -25,6 +26,7 @@ export const XRDashboard: React.FC<XRDashboardProps> = ({
   speed = 1,
   isPaused = false,
   onTrialSelect,
+  onChannelSelect,
   onTogglePlayPause,
   onSetSpeed,
   onExitXR,
@@ -35,6 +37,7 @@ export const XRDashboard: React.FC<XRDashboardProps> = ({
     useXRDashboardInteraction({
       hitAreasRef,
       onTrialSelect,
+      onChannelSelect,
       onTogglePlayPause,
       onSetSpeed,
       onExitXR,

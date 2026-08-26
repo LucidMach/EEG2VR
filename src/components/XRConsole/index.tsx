@@ -12,6 +12,7 @@ interface XRConsoleProps {
   historiesRef?: React.RefObject<Record<ElectrodeName, HistorySample[]>>;
   selectedChannel: ElectrodeName | null;
   onChannelSelect?: (name: ElectrodeName) => void;
+  onChannelHover?: (name: ElectrodeName | null) => void;
   onStartDemo?: () => void;
   onStartLive?: () => void;
   onTrialSelect?: (index: number, startOffset?: number) => void;
@@ -28,6 +29,7 @@ const XRConsole: React.FC<XRConsoleProps> = ({
   historiesRef,
   selectedChannel,
   onChannelSelect,
+  onChannelHover,
   onStartDemo,
   onStartLive,
   onTrialSelect,
@@ -64,6 +66,7 @@ const XRConsole: React.FC<XRConsoleProps> = ({
         historiesRef={historiesRef}
         selectedChannel={selectedChannel}
         onChannelSelect={onChannelSelect}
+        onChannelHover={onChannelHover}
       />
 
       {/* 3. Spatial Trial Navigation & Playback Controls with Telemetry Below Headset */}

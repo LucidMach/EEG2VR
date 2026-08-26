@@ -1,14 +1,15 @@
 import { ELECTRODE_NAMES, ELECTRODE_METADATA } from "../../../utils/signalSource";
 import { REGION_RGBA } from "../../BackgroundOscilloscopes/regionColors";
 import { computeScale } from "../../BackgroundOscilloscopes/scale";
-import type { DashboardRenderState } from "./types";
+import type { DashboardRenderState, InteractiveHitArea } from "./types";
 
 const HISTORY_LIMIT = 60;
 
 export function drawOscilloscopes(
   ctx: CanvasRenderingContext2D,
   state: DashboardRenderState,
-  box: { x: number; y: number; width: number; height: number }
+  box: { x: number; y: number; width: number; height: number },
+  hitAreas?: InteractiveHitArea[]
 ): void {
   const { histories, selectedChannel } = state;
   const { means, maxDeviation } = computeScale(histories);
@@ -29,6 +30,18 @@ export function drawOscilloscopes(
     const isSelected = name === selectedChannel;
     const meta = ELECTRODE_METADATA[name];
     const color = REGION_RGBA[meta.region] || { r: 100, g: 116, b: 139 };
+
+    if (hitAreas) {
+      hitAreas.push({
+        id: `channel-${name}`,
+        type: "channel-select",
+        x: box.x,
+        y: box.y + idx * laneHeight,
+        width: box.width,
+        height: laneHeight,
+        channelName: name,
+      });
+    }
 
     if (isSelected) {
       ctx.fillStyle = "rgba(99, 102, 241, 0.08)";

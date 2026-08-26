@@ -4,12 +4,13 @@ Loads `/digitalTwin.glb` and renders the 21 electrode LEDs plus the headset
 shell mesh, `forwardRef`'d so [[../HeadWrapper/index|HeadWrapper]] can attach
 its own placement/rotation to the returned `THREE.Group`.
 
-**Props**: `frameRef`, `selectedChannel?`, `onChannelSelect?`, plus any
+**Props**: `frameRef`, `selectedChannel?`, `hoveredChannel?`, `onChannelSelect?`, `onChannelHover?`, plus any
 `<group>` props (spread through, e.g. `rotation`).
 
 Its `useFrame` loop is the single place electrode color/emissive/opacity
 values actually get written — see [[ElectrodeNode]]'s spec for why the
-meshes themselves hold no color state. Built from [[gltfTypes|GLTFResult]]
+meshes themselves hold no color state. Forwards `isSelected` and `isHovered`
+to each [[ElectrodeNode]] to trigger animated halo auras on the active/hovered electrode. Built from [[gltfTypes|GLTFResult]]
 and [[electrodeNodes|ELECTRODE_NODE_PLACEMENTS]].
 
 **Non-obvious**: node lookup falls back from `nodeKey` (e.g. `HemiSphereF7`)

@@ -1,9 +1,12 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Text } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
 import type { Frame, ElectrodeName } from "../../../utils/signalSource";
 import { formatTime } from "../../TrialProgressBar/formatTime";
 import { createPillShape } from "../pillShape";
+import { useXRDragInteraction } from "../../HeadWrapper/useXRDragInteraction";
+import { triggerXRHaptic } from "../../../utils/xrHaptics";
 import XRControlPill from "./XRControlPill";
 
 interface XRControlBarProps {
@@ -34,6 +37,27 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   onExitXR,
   audioError = false,
 }) => {
+  const { gl } = useThree();
+  const groupRef = useRef<THREE.Group>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const { handlePointerDown, handlePointerMove, handlePointerUp } =
+    useXRDragInteraction({
+      gl,
+      groupRef,
+      initialPosition: [0, 0.82, -1.05],
+      initialRotation: [-Math.PI / 6, 0, 0],
+      onDragStart: (e) => {
+        setIsDragging(true);
+        triggerXRHaptic(e, 0.45, 20);
+      },
+      onDragEnd: (e) => {
+        setIsDragging(false);
+        triggerXRHaptic(e, 0.25, 12);
+      },
+    });
+
   const frame = frameRef.current;
   const currentTrial = frame?.trialIndex ?? 0;
   const trialElapsed = frame?.trialElapsed ?? 0;
@@ -43,7 +67,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   const focusAvg = frame?.focus_avg;
 
   const cardWidth = 0.78;
-  const cardHeight = 0.31;
+  const cardHeight = 0.32;
   const cardShape = useMemo(() => createPillShape(cardWidth, cardHeight, 0.035), []);
   const cardOutlineGeo = useMemo(
     () => new THREE.BufferGeometry().setFromPoints(cardShape.getPoints(48)),
@@ -81,29 +105,49 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   const barHeight = 0.008;
 
   return (
-    <group position={[0, 0.82, -1.05]} rotation={[-Math.PI / 6, 0, 0]}>
-      {/* 1. Frosted Translucent Backing Card for High Contrast */}
-      <mesh position={[0, 0, -0.006]} raycast={() => null}>
+    <group
+      ref={groupRef}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
+      {/* 1. Frosted Translucent Backing Card for High Contrast & Drag Interaction */}
+      <mesh
+        position={[0, 0, -0.006]}
+        onPointerEnter={(e) => {
+          e.stopPropagation();
+          setIsHovered(true);
+          triggerXRHaptic(e, 0.2, 10);
+        }}
+        onPointerLeave={(e) => {
+          e.stopPropagation();
+          setIsHovered(false);
+        }}
+      >
         <shapeGeometry args={[cardShape]} />
         <meshStandardMaterial
-          color="#090d16"
+          color={isDragging ? "#0c1322" : isHovered ? "#0f172a" : "#090d16"}
           roughness={0.25}
           metalness={0.2}
           transparent
-          opacity={0.9}
+          opacity={0.92}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Outermost Wireframe Border (clean single boundary line, no diagonal crystal facets) */}
+      {/* Outermost Wireframe Border (clean single boundary line, glows on hover/drag) */}
       <lineLoop geometry={cardOutlineGeo} position={[0, 0, -0.004]} raycast={() => null}>
-        <lineBasicMaterial color="#334155" transparent opacity={0.6} />
+        <lineBasicMaterial
+          color={isDragging ? "#38bdf8" : isHovered ? "#60a5fa" : "#334155"}
+          transparent
+          opacity={isDragging ? 1.0 : isHovered ? 0.85 : 0.6}
+        />
       </lineLoop>
 
       {/* 2. Top Header Row: Trial info, Phase pill, Exit button */}
       {/* Current Trial Readout */}
       <Text
-        position={[-0.26, 0.115, 0.004]}
+        position={[-0.26, 0.118, 0.004]}
         fontSize={0.016}
         color="#ffffff"
         anchorX="left"
@@ -113,7 +157,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
       </Text>
 
       {/* Phase Badge */}
-      <group position={[0, 0.115, 0.004]}>
+      <group position={[0, 0.118, 0.004]}>
         <Text
           fontSize={0.013}
           color={phaseColor}
@@ -126,7 +170,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
 
       {/* Elapsed Time Counter */}
       <Text
-        position={[0.16, 0.115, 0.004]}
+        position={[0.16, 0.118, 0.004]}
         fontSize={0.013}
         color="#94a3b8"
         anchorX="left"
@@ -143,11 +187,11 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
         height={0.026}
         fontSize={0.01}
         variant="danger"
-        position={[0.31, 0.115, 0.004]}
+        position={[0.31, 0.118, 0.004]}
       />
 
       {/* 3. Dual-Stage Trial Progress Bar (Baseline [3s] + Stimulation [60s]) */}
-      <group position={[0, 0.075, 0.004]}>
+      <group position={[0, 0.078, 0.004]}>
         {/* Baseline Track Container (Left) */}
         <group position={[-0.23, 0, 0]}>
           {/* Baseline Background Track */}
@@ -202,7 +246,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
       </group>
 
       {/* 4. Middle Telemetry Section: Focus Metrics + Auditory Stimuli Information */}
-      <group position={[0, 0.015, 0.004]}>
+      <group position={[0, 0.018, 0.004]}>
         {/* Left Sub-card: Focus Index & Running Average */}
         <group position={[-0.18, 0, 0]}>
           <mesh position={[0, 0, -0.001]}>
@@ -283,7 +327,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
       </group>
 
       {/* 5. Bottom Flex Row of Playback Controls */}
-      <group position={[0, -0.056, 0.004]}>
+      <group position={[0, -0.052, 0.004]}>
         {/* Prev Trial Button */}
         <XRControlPill
           label="◀ Prev"
@@ -345,7 +389,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
       {/* Selected Channel Hint */}
       {selectedChannel && (
         <Text
-          position={[0, -0.108, 0.004]}
+          position={[0, -0.100, 0.004]}
           fontSize={0.01}
           color="#94a3b8"
           anchorX="center"
@@ -354,8 +398,35 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
           {`Selected: ${selectedChannel}  ·  Point ray at sensor LED or cylinder lane to inspect`}
         </Text>
       )}
+
+      {/* 6. VisionOS-style Grab / Drag Handle Bar */}
+      <group position={[0, -0.134, 0.004]}>
+        {/* Pill Handle Bar */}
+        <mesh position={[0, 0, 0]} raycast={() => null}>
+          <planeGeometry args={[0.18, 0.005]} />
+          <meshBasicMaterial
+            color={isDragging ? "#38bdf8" : isHovered ? "#94a3b8" : "#475569"}
+            transparent
+            opacity={isDragging ? 0.95 : isHovered ? 0.75 : 0.4}
+          />
+        </mesh>
+        {/* Drag Hint / Repositioning Indicator */}
+        {(isHovered || isDragging) && (
+          <Text
+            position={[0, -0.012, 0]}
+            fontSize={0.008}
+            color={isDragging ? "#38bdf8" : "#94a3b8"}
+            anchorX="center"
+            anchorY="middle"
+            raycast={() => null}
+          >
+            {isDragging ? "Repositioning..." : "⠿ Drag to Reposition"}
+          </Text>
+        )}
+      </group>
     </group>
   );
 };
 
 export default XRControlBar;
+

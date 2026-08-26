@@ -23,12 +23,17 @@ export function renderDashboard(
   drawHeader(ctx, state, CANVAS_WIDTH, hitAreas);
 
   // 3. Draw Multi-Channel Oscilloscopes (Left Column)
-  drawOscilloscopes(ctx, state, {
-    x: 20,
-    y: 72,
-    width: 880,
-    height: 686,
-  });
+  drawOscilloscopes(
+    ctx,
+    state,
+    {
+      x: 20,
+      y: 72,
+      width: 880,
+      height: 686,
+    },
+    hitAreas
+  );
 
   // 4. Draw Focus Dial Gauge (Right Column Top)
   drawFocusDial(ctx, state, {

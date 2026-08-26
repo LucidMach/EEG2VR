@@ -11,13 +11,15 @@ import ElectrodeNode from "./ElectrodeNode";
 interface EEGHeadProps extends React.ComponentPropsWithoutRef<"group"> {
   frameRef: React.RefObject<Frame>;
   selectedChannel?: ElectrodeName | null;
+  hoveredChannel?: ElectrodeName | null;
   onChannelSelect?: (channelName: ElectrodeName) => void;
+  onChannelHover?: (channelName: ElectrodeName | null) => void;
 }
 
 const BLACK_COLOR = new THREE.Color(0x000000);
 
 const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
-  ({ frameRef, selectedChannel, onChannelSelect, ...props }, ref) => {
+  ({ frameRef, selectedChannel, hoveredChannel, onChannelSelect, onChannelHover, ...props }, ref) => {
     const { nodes, materials } = useGLTF("/digitalTwin.glb") as unknown as GLTFResult;
     const meshRefs = useRef<Record<string, THREE.Mesh>>({});
 
@@ -57,10 +59,13 @@ const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
               geometry={node.geometry}
               position={position}
               rotation={rotation}
+              isSelected={selectedChannel === name}
+              isHovered={hoveredChannel === name}
               onRef={(chName, mesh) => {
                 if (mesh) meshRefs.current[chName] = mesh;
               }}
               onSelect={onChannelSelect}
+              onHover={onChannelHover}
             />
           );
         })}
@@ -72,7 +77,6 @@ const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
             geometry={nodes.Modular_Headset.geometry}
             material={materials.MattBlack}
             scale={0.161}
-            raycast={() => null}
           />
         )}
       </group>

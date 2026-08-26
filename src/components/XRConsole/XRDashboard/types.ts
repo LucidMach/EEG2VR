@@ -12,11 +12,12 @@ export interface DashboardRenderState {
 
 export interface InteractiveHitArea {
   id: string;
-  type: "trial-baseline" | "trial-stimulus" | "play-pause" | "speed" | "exit-xr";
+  type: "trial-baseline" | "trial-stimulus" | "play-pause" | "speed" | "exit-xr" | "channel-select";
   x: number;
   y: number;
   width: number;
   height: number;
   trialIndex?: number;
   startOffset?: number;
+  channelName?: ElectrodeName;
 }

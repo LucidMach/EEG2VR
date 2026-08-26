@@ -5,7 +5,7 @@
 // stay off the 20 Hz React re-render path — useHeadPlacement's useFrame loop
 // reads the latest frame each three.js frame.
 import * as THREE from "three";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import EEGHead from "../eegHead";
 import XRConsole from "../XRConsole";
@@ -47,6 +47,7 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
 }) => {
   const { gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
+  const [hoveredChannel, setHoveredChannel] = useState<ElectrodeName | null>(null);
 
   const { isDraggingRef, xrPositionRef, xrRotationRef, handlePointerDown, handlePointerMove, handlePointerUp } =
     useXRDragInteraction({ gl, groupRef });
@@ -68,7 +69,9 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
           ref={groupRef}
           frameRef={frameRef}
           selectedChannel={selectedChannel}
+          hoveredChannel={hoveredChannel}
           onChannelSelect={onChannelSelect}
+          onChannelHover={setHoveredChannel}
           rotation={[Math.PI / 32, 0, 0]}
         />
       </group>
@@ -78,6 +81,7 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
         historiesRef={historiesRef}
         selectedChannel={selectedChannel}
         onChannelSelect={onChannelSelect}
+        onChannelHover={setHoveredChannel}
         onStartDemo={onStartDemo}
         onStartLive={onStartLive}
         onTrialSelect={onTrialSelect}

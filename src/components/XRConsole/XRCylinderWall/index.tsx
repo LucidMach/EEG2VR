@@ -13,6 +13,7 @@ interface XRCylinderWallProps {
   historiesRef?: React.RefObject<Record<ElectrodeName, HistorySample[]>>;
   selectedChannel: ElectrodeName | null;
   onChannelSelect?: (name: ElectrodeName) => void;
+  onChannelHover?: (name: ElectrodeName | null) => void;
   radius?: number;
   height?: number;
 }
@@ -24,6 +25,7 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
   historiesRef,
   selectedChannel,
   onChannelSelect,
+  onChannelHover,
   radius = 3.6,
   height = 2.4,
 }) => {
@@ -67,6 +69,7 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
     const channel = getChannelAtUV(e.uv);
     if (channel !== hoveredChannelRef.current) {
       hoveredChannelRef.current = channel;
+      onChannelHover?.(channel);
       if (channel) {
         triggerXRHaptic(e, 0.2, 10);
       }
@@ -78,10 +81,11 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
     isHoveredRef.current = false;
     if (hoveredChannelRef.current !== null) {
       hoveredChannelRef.current = null;
+      onChannelHover?.(null);
     }
   };
 
-  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
+  const handlePointerDown = (e: ThreeEvent<PointerEvent | MouseEvent>) => {
     e.stopPropagation();
     if (!e.uv) return;
 
@@ -142,6 +146,7 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
           position={[0, 0, 0]}
           onPointerMove={handlePointerMove}
           onPointerDown={handlePointerDown}
+          onClick={handlePointerDown}
           onPointerOut={handlePointerOut}
         >
           <cylinderGeometry
