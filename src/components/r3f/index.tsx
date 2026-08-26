@@ -6,7 +6,6 @@ import type { ElectrodeName } from "../../utils/signalSource";
 import { IdleHeadline, IdleActions } from "../IdleSplash";
 import BackgroundOscilloscopes from "../BackgroundOscilloscopes";
 import { useSpacebarToggle } from "./useSpacebarToggle";
-import ChannelTooltip from "./ChannelTooltip";
 import AudioErrorToast from "./AudioErrorToast";
 import TopHudBar from "./TopHudBar";
 import LoadingOverlay from "./LoadingOverlay";
@@ -34,7 +33,6 @@ const R3F: React.FC = () => {
       {/* 3D VIEWPORT: CENTER SECTION                             */}
       {/* ======================================================== */}
       <div className="flex-1 flex flex-col relative bg-transparent">
-        {!isIdle && hoveredChannel && <ChannelTooltip channel={hoveredChannel} frame={engine.frame} />}
         {engine.audioError && <AudioErrorToast />}
         {!isIdle && <TopHudBar engine={engine} />}
 

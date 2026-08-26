@@ -9,7 +9,7 @@ panels based on `engine.mode`:
 - Demo only: [[DemoBottomControls]] (trial timeline + dial).
 - Always: [[../BackgroundOscilloscopes/index|BackgroundOscilloscopes]] behind
   everything, `Scene` (`../Scene.tsx`, the 3D canvas) in the middle, and
-  conditionally [[ChannelTooltip]], [[AudioErrorToast]], [[LoadingOverlay]].
+  conditionally [[AudioErrorToast]], [[LoadingOverlay]].
 
 [[useSpacebarToggle]] wires the global play/pause shortcut.
 

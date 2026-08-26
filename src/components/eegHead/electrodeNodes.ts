@@ -39,22 +39,177 @@ export const ELECTRODE_NODE_PLACEMENTS: ElectrodeNodePlacement[] = [
 // Rotates the headset such that the target electrode and its halo face directly
 // toward the camera/user with zero roll for an upright presentation.
 // Head center is offset at y ~ 2.8 on the digital twin coordinate space.
-export const ELECTRODE_FOCUS_QUATERNIONS: Record<ElectrodeName, THREE.Quaternion> = (() => {
-  const HEAD_CENTER_Y = 2.8;
-  const CAMERA_PITCH = Math.PI / 32;
-  const map = {} as Record<ElectrodeName, THREE.Quaternion>;
+
+/**
+ * Computes the outward-facing unit normal vector of an electrode's halo ring
+ * in the headset model's local coordinate system.
+ */
+export function computeElectrodeRingNormal(
+  placementRotation: [number, number, number],
+  placementPosition: [number, number, number],
+  geometry?: THREE.BufferGeometry
+): THREE.Vector3 {
+  let rot: [number, number, number] = [0, 0, 0];
+
+  if (geometry) {
+    if (!geometry.boundingBox) {
+      geometry.computeBoundingBox();
+    }
+    const bb = geometry.boundingBox;
+    if (bb) {
+      const dx = bb.max.x - bb.min.x;
+      const dy = bb.max.y - bb.min.y;
+      const dz = bb.max.z - bb.min.z;
+
+      // Smallest dimension indicates the hemisphere dome extrusion axis
+      if (dy <= dx && dy <= dz) {
+        rot = [Math.PI / 2, 0, 0];
+      } else if (dx <= dy && dx <= dz) {
+        rot = [0, Math.PI / 2, 0];
+      } else {
+        rot = [0, 0, 0];
+      }
+    }
+  }
+
+  // Base normal of RingGeometry / TorusGeometry (in XY plane, facing +Z)
+  const normal = new THREE.Vector3(0, 0, 1);
+  // Apply ring local rotation relative to dome base
+  normal.applyEuler(new THREE.Euler(rot[0], rot[1], rot[2], "XYZ"));
+  // Apply node placement rotation relative to headset
+  normal.applyEuler(
+    new THREE.Euler(placementRotation[0], placementRotation[1], placementRotation[2], "XYZ")
+  );
+
+  // Ensure normal points outward away from head center (y ~ 2.8)
+  const headCenter = new THREE.Vector3(0, 2.8, 0);
+  const outward = new THREE.Vector3(...placementPosition).sub(headCenter);
+  if (normal.dot(outward) < 0) {
+    normal.negate();
+  }
+
+  return normal.normalize();
+}
+
+/**
+ * Computes the orientation quaternion for the headset such that the electrode ring's
+ * outward normal aligns directly with targetDirection (orthogonally facing camera)
+ * with zero/minimal roll relative to upReference (maintaining an upright head posture).
+ */
+export function computeFocusQuaternion(
+  ringNormal: THREE.Vector3,
+  targetDirection: THREE.Vector3 = new THREE.Vector3(0, 0, 1),
+  upReference: THREE.Vector3 = new THREE.Vector3(0, 1, 0)
+): THREE.Quaternion {
+  const fLocal = ringNormal.clone().normalize();
+  const fWorld = targetDirection.clone().normalize();
+  const upRef = upReference.clone().normalize();
+
+  // Head local "up" natural axis
+  const headUpLocal = new THREE.Vector3(0, 1, 0);
+
+  // Construct local orthonormal basis [rLocal, uLocal, fLocal]
+  let rLocal: THREE.Vector3;
+  if (Math.abs(fLocal.dot(headUpLocal)) > 0.95) {
+    // For electrodes near top/bottom pole (e.g. Cz), use head forward (0,0,1)
+    // as reference so the face points forward/downward with level ears
+    const headForwardLocal = new THREE.Vector3(0, 0, 1);
+    rLocal = new THREE.Vector3().crossVectors(headUpLocal, headForwardLocal);
+    if (fLocal.y < 0) {
+      rLocal.negate();
+    }
+  } else {
+    rLocal = new THREE.Vector3().crossVectors(headUpLocal, fLocal);
+  }
+  rLocal.normalize();
+  const uLocal = new THREE.Vector3().crossVectors(fLocal, rLocal).normalize();
+
+  // Construct world orthonormal basis [rWorld, uWorld, fWorld]
+  let rWorld: THREE.Vector3;
+  if (Math.abs(fWorld.dot(upRef)) > 0.95) {
+    const worldForward = new THREE.Vector3(0, 0, -1);
+    rWorld = new THREE.Vector3().crossVectors(upRef, worldForward);
+  } else {
+    rWorld = new THREE.Vector3().crossVectors(upRef, fWorld);
+  }
+  rWorld.normalize();
+  const uWorld = new THREE.Vector3().crossVectors(fWorld, rWorld).normalize();
+
+  // Basis matrices: M = [right, up, forward]
+  const mLocal = new THREE.Matrix4().makeBasis(rLocal, uLocal, fLocal);
+  const mWorld = new THREE.Matrix4().makeBasis(rWorld, uWorld, fWorld);
+
+  // R = M_world * M_local^T
+  const mLocalInv = mLocal.clone().transpose();
+  const rMat = new THREE.Matrix4().multiplyMatrices(mWorld, mLocalInv);
+
+  return new THREE.Quaternion().setFromRotationMatrix(rMat);
+}
+
+const DEFAULT_CAMERA_DIR = new THREE.Vector3(
+  0,
+  Math.sin(Math.PI / 32),
+  Math.cos(Math.PI / 32)
+).normalize();
+
+// Precomputed outward unit normal vectors for each electrode ring on the headset
+export const ELECTRODE_RING_NORMALS: Record<ElectrodeName, THREE.Vector3> = (() => {
+  const map = {} as Record<ElectrodeName, THREE.Vector3>;
   for (const placement of ELECTRODE_NODE_PLACEMENTS) {
-    const [x, y, z] = placement.position;
-    const dy = y - HEAD_CENTER_Y;
-    const theta = Math.atan2(x, z);
-    const rxz = Math.sqrt(x * x + z * z);
-    const phi = Math.atan2(dy, rxz);
-    map[placement.name] = new THREE.Quaternion().setFromEuler(
-      new THREE.Euler(phi + CAMERA_PITCH, -theta, 0, "YXZ")
+    map[placement.name] = computeElectrodeRingNormal(
+      placement.rotation,
+      placement.position
     );
   }
   return map;
 })();
+
+// Precomputed focus quaternions aligning each electrode's halo directly facing the camera
+export const ELECTRODE_FOCUS_QUATERNIONS: Record<ElectrodeName, THREE.Quaternion> = (() => {
+  const map = {} as Record<ElectrodeName, THREE.Quaternion>;
+  for (const placement of ELECTRODE_NODE_PLACEMENTS) {
+    map[placement.name] = computeFocusQuaternion(
+      ELECTRODE_RING_NORMALS[placement.name],
+      DEFAULT_CAMERA_DIR
+    );
+  }
+  return map;
+})();
+
+/**
+ * Updates the ring normal and focus quaternion for a specific electrode
+ * using its loaded GLTF BufferGeometry.
+ */
+export function updateElectrodeGeometry(
+  name: ElectrodeName,
+  geometry: THREE.BufferGeometry
+): void {
+  const placement = ELECTRODE_NODE_PLACEMENTS.find((p) => p.name === name);
+  if (!placement) return;
+  const normal = computeElectrodeRingNormal(
+    placement.rotation,
+    placement.position,
+    geometry
+  );
+  ELECTRODE_RING_NORMALS[name] = normal;
+  ELECTRODE_FOCUS_QUATERNIONS[name] = computeFocusQuaternion(
+    normal,
+    DEFAULT_CAMERA_DIR
+  );
+}
+
+/**
+ * Returns the focus quaternion for an electrode targeting a specific camera vector.
+ */
+export function getElectrodeFocusQuaternion(
+  name: ElectrodeName,
+  targetDirection: THREE.Vector3 = DEFAULT_CAMERA_DIR,
+  upReference: THREE.Vector3 = new THREE.Vector3(0, 1, 0)
+): THREE.Quaternion {
+  const normal = ELECTRODE_RING_NORMALS[name];
+  if (!normal) return DEFAULT_HEADSET_QUATERNION;
+  return computeFocusQuaternion(normal, targetDirection, upReference);
+}
 
 export const DEFAULT_HEADSET_QUATERNION = new THREE.Quaternion().setFromEuler(
   new THREE.Euler(Math.PI / 32, 0, 0, "YXZ")

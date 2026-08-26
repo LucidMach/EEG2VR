@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { ElectrodeName, Frame } from "../../utils/signalSource";
 import {
-  ELECTRODE_FOCUS_QUATERNIONS,
+  getElectrodeFocusQuaternion,
   DEFAULT_HEADSET_QUATERNION,
 } from "../eegHead/electrodeNodes";
 
@@ -16,10 +16,15 @@ interface Params {
   selectedChannel?: ElectrodeName | null;
 }
 
+const tempVec = new THREE.Vector3();
+const tempCamPos = new THREE.Vector3();
+const tempWorldUp = new THREE.Vector3(0, 1, 0);
+
 // Per-frame placement of the headset group: a fixed physical-scale pose in
 // front of the user in WebXR (draggable via useXRDragInteraction), or an
 // auto-scaled showcase/idle layout on the 2D desktop viewport.
-// When a channel is selected, smoothly auto-rotates the headset to focus on that LED.
+// When a channel is selected, smoothly auto-rotates the headset so the electrode
+// ring faces the camera orthogonally.
 export function useHeadPlacement({
   groupRef,
   frameRef,
@@ -37,13 +42,18 @@ export function useHeadPlacement({
     const group = groupRef.current;
     if (!group) return;
 
-    const targetQuat =
-      (selectedChannel && ELECTRODE_FOCUS_QUATERNIONS[selectedChannel]) ||
-      DEFAULT_HEADSET_QUATERNION;
     const slerpFactor = 1 - Math.exp(-8 * Math.min(delta, 0.1));
 
     if (isPresenting) {
       // --- WebXR VR/AR Presentation Layout ---
+      // In XR, calculate line of sight from headset to user's VR camera
+      state.camera.getWorldPosition(tempCamPos);
+      tempVec.subVectors(tempCamPos, xrPositionRef.current).normalize();
+
+      const targetQuat = selectedChannel
+        ? getElectrodeFocusQuaternion(selectedChannel, tempVec, tempWorldUp)
+        : DEFAULT_HEADSET_QUATERNION;
+
       if (!wasPresentingRef.current) {
         xrPositionRef.current.set(0, 1.3, -1.1);
         xrRotationRef.current.copy(targetQuat);
@@ -76,6 +86,15 @@ export function useHeadPlacement({
       } else {
         group.scale.setScalar(targetScale);
         group.position.set(0, -11 * targetScale, 0);
+
+        // Vector from head position to 2D desktop camera
+        state.camera.getWorldPosition(tempCamPos);
+        tempVec.subVectors(tempCamPos, group.position).normalize();
+
+        const targetQuat = selectedChannel
+          ? getElectrodeFocusQuaternion(selectedChannel, tempVec, state.camera.up)
+          : DEFAULT_HEADSET_QUATERNION;
+
         group.quaternion.slerp(targetQuat, slerpFactor);
       }
     }

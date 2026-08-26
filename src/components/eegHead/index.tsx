@@ -1,11 +1,11 @@
 import * as THREE from "three";
-import React, { useRef, forwardRef } from "react";
+import React, { useRef, useEffect, forwardRef } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import type { ElectrodeName, Frame } from "../../utils/signalSource";
 import { computeElectrodeVisualState } from "../../utils/electrodeVisualState";
 import type { GLTFResult } from "./gltfTypes";
-import { ELECTRODE_NODE_PLACEMENTS } from "./electrodeNodes";
+import { ELECTRODE_NODE_PLACEMENTS, updateElectrodeGeometry } from "./electrodeNodes";
 import ElectrodeNode from "./ElectrodeNode";
 
 interface EEGHeadProps extends React.ComponentPropsWithoutRef<"group"> {
@@ -22,6 +22,19 @@ const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
   ({ frameRef, selectedChannel, hoveredChannel, onChannelSelect, onChannelHover, ...props }, ref) => {
     const { nodes, materials } = useGLTF("/digitalTwin.glb") as unknown as GLTFResult;
     const meshRefs = useRef<Record<string, THREE.Mesh>>({});
+
+    useEffect(() => {
+      if (!nodes) return;
+      for (const placement of ELECTRODE_NODE_PLACEMENTS) {
+        const node =
+          nodes[placement.nodeKey] ||
+          (nodes as unknown as Record<string, THREE.Mesh>)[`HemiSphere.${placement.name}`] ||
+          (nodes as unknown as Record<string, THREE.Mesh>)[`HemiSphere${placement.name}`];
+        if (node && node.geometry) {
+          updateElectrodeGeometry(placement.name, node.geometry);
+        }
+      }
+    }, [nodes]);
 
     useFrame((state) => {
       const time = state.clock.getElapsedTime();

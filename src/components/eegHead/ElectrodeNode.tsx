@@ -22,8 +22,8 @@ interface ElectrodeNodeProps {
 // color/intensity/opacity are animated externally (see EEGHead's useFrame),
 // which is why the mesh registers itself via `onRef`.
 //
-// When selected (or hovered), renders a concentric 3D glowing torus collar
-// and halo ring around the sensor base with cortical region-themed illumination.
+// When selected (or hovered), renders a glowing halo ring around the sensor
+// base with cortical region-themed illumination.
 const ElectrodeNode: React.FC<ElectrodeNodeProps> = ({
   name,
   geometry,
@@ -133,23 +133,9 @@ const ElectrodeNode: React.FC<ElectrodeNodeProps> = ({
       {(isSelected || isHovered) && (
         <group position={ringOffset} rotation={ringRotation} scale={2.1}>
           <group ref={ringGroupRef}>
-            {/* 3D Glowing Torus Collar surrounding the LED base on the headset */}
+            {/* Glowing halo disc aura extending onto headset surface */}
             <mesh raycast={() => null}>
-              <torusGeometry args={[baseRadius * 1.35, baseRadius * 0.1, 16, 32]} />
-              <meshStandardMaterial
-                color={ringColor}
-                emissive={ringColor}
-                emissiveIntensity={isSelected ? 1.8 : 0.8}
-                roughness={0.15}
-                metalness={0.2}
-                transparent
-                opacity={isSelected ? 0.95 : 0.65}
-              />
-            </mesh>
-
-            {/* Outer glowing halo disc aura extending onto headset surface */}
-            <mesh raycast={() => null}>
-              <ringGeometry args={[baseRadius * 1.45, baseRadius * 2.2, 32]} />
+              <ringGeometry args={[baseRadius * 1.25, baseRadius * 2.2, 32]} />
               <meshBasicMaterial
                 color={ringColor}
                 side={THREE.DoubleSide}
