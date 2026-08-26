@@ -63,7 +63,14 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
       },
     });
 
-  useHeadPlacement({ groupRef, frameRef, isDraggingRef, xrPositionRef, xrRotationRef });
+  useHeadPlacement({
+    groupRef,
+    frameRef,
+    isDraggingRef,
+    xrPositionRef,
+    xrRotationRef,
+    selectedChannel,
+  });
 
   const handleExitXR = () => {
     onExitXR?.() || gl.xr.getSession()?.end();
@@ -83,7 +90,6 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
           hoveredChannel={hoveredChannel}
           onChannelSelect={onChannelSelect}
           onChannelHover={onChannelHover}
-          rotation={[Math.PI / 32, 0, 0]}
         />
       </group>
       {/* Render 3D Spatial Dashboard in WebXR Mode only */}

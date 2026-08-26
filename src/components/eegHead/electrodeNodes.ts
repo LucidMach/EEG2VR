@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import type { ElectrodeName } from "../../utils/signalSource";
 import type { GLTFResult } from "./gltfTypes";
 
@@ -33,3 +34,25 @@ export const ELECTRODE_NODE_PLACEMENTS: ElectrodeNodePlacement[] = [
   { name: "T5", nodeKey: "HemiSphereT5", position: [14.706, 2.708, -10.917], rotation: [-0.189, 0.422, 0.158] },
   { name: "T6", nodeKey: "HemiSphereT6", position: [-14.726, 2.708, -10.917], rotation: [-2.938, 0.559, 3.112] },
 ];
+
+// Precomputed map of focus quaternions for each electrode.
+// Rotates the headset such that the target electrode points directly along +Z
+// (facing the camera / user) with zero roll for an upright presentation.
+export const ELECTRODE_FOCUS_QUATERNIONS: Record<ElectrodeName, THREE.Quaternion> = (() => {
+  const map = {} as Record<ElectrodeName, THREE.Quaternion>;
+  for (const placement of ELECTRODE_NODE_PLACEMENTS) {
+    const [x, y, z] = placement.position;
+    const theta = Math.atan2(x, z);
+    const rxz = Math.sqrt(x * x + z * z);
+    const phi = Math.atan2(y, rxz);
+    map[placement.name] = new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(phi, -theta, 0, "YXZ")
+    );
+  }
+  return map;
+})();
+
+export const DEFAULT_HEADSET_QUATERNION = new THREE.Quaternion().setFromEuler(
+  new THREE.Euler(Math.PI / 32, 0, 0, "YXZ")
+);
+
