@@ -51,6 +51,13 @@ export function useXRCylinderTexture({
 
     setTexture(tex);
 
+    // Preload custom OffBit font for canvas rendering
+    if (typeof document !== "undefined" && document.fonts) {
+      document.fonts.load("bold 13px OffBit").then(() => {
+        lastFrameRef.current = null;
+      }).catch(() => {});
+    }
+
     return () => {
       tex.dispose();
       canvasRef.current = null;

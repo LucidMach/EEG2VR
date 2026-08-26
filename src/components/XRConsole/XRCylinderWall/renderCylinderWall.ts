@@ -44,20 +44,25 @@ export function renderCylinderWall(
   ctx.lineTo(width, headerHeight);
   ctx.stroke();
 
-  // App Title & Branding matching web styling
-  ctx.font = "bold 26px monospace";
-  ctx.fillStyle = "#0f172a";
+  // App Title & Branding matching desktop home styling (OffBit + font-black sans-serif)
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText("BRAINXR", 64, headerHeight / 2);
 
-  ctx.font = "bold 15px monospace";
-  ctx.fillStyle = "#6366f1";
-  ctx.fillText("AN MNET EXPERIENCE", 216, headerHeight / 2);
+  // 1. Eyebrow: "AN MNET EXPERIENCE" matching desktop SpannedText (OffBit font)
+  ctx.font = "bold 13px 'OffBit', monospace";
+  ctx.fillStyle = "#334155";
+  ctx.fillText("AN MNET EXPERIENCE", 64, 26);
 
-  ctx.font = "15px sans-serif";
+  // 2. Main Title: "BRAINXR" matching desktop h1 (font-black uppercase sans-serif)
+  ctx.font = "900 32px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+  ctx.fillStyle = "#0f172a";
+  ctx.fillText("BRAINXR", 64, 56);
+  const titleWidth = ctx.measureText("BRAINXR").width;
+
+  // 3. Telemetry subtitle alongside BRAINXR
+  ctx.font = "500 14px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
   ctx.fillStyle = "#64748b";
-  ctx.fillText("· 21-Channel Continuous EEG Telemetry", 440, headerHeight / 2);
+  ctx.fillText("· 21-Channel Continuous EEG Telemetry", 64 + titleWidth + 18, 56);
 
   // Center Phase Badge matching web PhaseIndicator
   const isBaseline = frame.phase === "baseline";
