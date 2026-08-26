@@ -10,19 +10,17 @@ interface BackgroundOscilloscopesProps {
   // data arrived, redraw" signal.
   frameRef: React.RefObject<Frame>;
   selectedChannel: ElectrodeName | null;
-  hoveredChannel?: ElectrodeName | null;
 }
 
 const BackgroundOscilloscopes: React.FC<BackgroundOscilloscopesProps> = ({
   historiesRef,
   frameRef,
   selectedChannel,
-  hoveredChannel,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Self-driving draw loop: reads the ring buffers off the ref on each animation
-  // frame and only repaints when a new tick has arrived (or the selection/hover
+  // frame and only repaints when a new tick has arrived (or the selection
   // changed). This keeps the oscilloscope off React's re-render path entirely.
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -32,7 +30,7 @@ const BackgroundOscilloscopes: React.FC<BackgroundOscilloscopesProps> = ({
 
     let raf = 0;
     let lastFrame: Frame | null = null;
-    let needsRedraw = true; // force a paint on mount / selection / hover change
+    let needsRedraw = true; // force a paint on mount / selection change
 
     const draw = () => {
       const histories = historiesRef.current;
@@ -40,7 +38,7 @@ const BackgroundOscilloscopes: React.FC<BackgroundOscilloscopesProps> = ({
       if (needsRedraw || frameRef.current !== lastFrame) {
         lastFrame = frameRef.current;
         needsRedraw = false;
-        render(ctx, canvas, histories, selectedChannel, hoveredChannel);
+        render(ctx, canvas, histories, selectedChannel);
       }
 
       raf = requestAnimationFrame(draw);
@@ -48,7 +46,7 @@ const BackgroundOscilloscopes: React.FC<BackgroundOscilloscopesProps> = ({
 
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [historiesRef, frameRef, selectedChannel, hoveredChannel]);
+  }, [historiesRef, frameRef, selectedChannel]);
 
   return (
     <canvas

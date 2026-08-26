@@ -1,5 +1,4 @@
-import * as THREE from "three";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import EEGHead from "../eegHead";
 import XRConsole from "../XRConsole";
@@ -13,9 +12,7 @@ interface HeadWrapperProps {
   frameRef: React.RefObject<Frame>;
   historiesRef?: React.RefObject<Record<ElectrodeName, HistorySample[]>>;
   selectedChannel: ElectrodeName | null;
-  hoveredChannel?: ElectrodeName | null;
   onChannelSelect: (name: ElectrodeName) => void;
-  onChannelHover?: (name: ElectrodeName | null) => void;
   onStartDemo?: () => void;
   onStartLive?: () => void;
   onTrialSelect?: (index: number, startOffset?: number) => void;
@@ -31,9 +28,7 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
   frameRef,
   historiesRef,
   selectedChannel,
-  hoveredChannel,
   onChannelSelect,
-  onChannelHover,
   onStartDemo,
   onStartLive,
   onTrialSelect,
@@ -46,6 +41,7 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
 }) => {
   const { gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
+  const [hoveredChannel, setHoveredChannel] = useState<ElectrodeName | null>(null);
 
   const panelPositionRef = useRef(new THREE.Vector3(0, 0.82, -1.05));
   const panelRotationRef = useRef(
@@ -89,7 +85,7 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
           selectedChannel={selectedChannel}
           hoveredChannel={hoveredChannel}
           onChannelSelect={onChannelSelect}
-          onChannelHover={onChannelHover}
+          onChannelHover={setHoveredChannel}
         />
       </group>
       {/* Render 3D Spatial Dashboard in WebXR Mode only */}
@@ -99,7 +95,7 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
         selectedChannel={selectedChannel}
         hoveredChannel={hoveredChannel}
         onChannelSelect={onChannelSelect}
-        onChannelHover={onChannelHover}
+        onChannelHover={setHoveredChannel}
         onStartDemo={onStartDemo}
         onStartLive={onStartLive}
         onTrialSelect={onTrialSelect}

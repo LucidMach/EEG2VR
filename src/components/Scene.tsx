@@ -18,9 +18,7 @@ interface SceneProps {
   frameRef: React.RefObject<Frame>;
   historiesRef?: React.RefObject<Record<ElectrodeName, HistorySample[]>>;
   selectedChannel: ElectrodeName | null;
-  hoveredChannel?: ElectrodeName | null;
   onChannelSelect: (name: ElectrodeName) => void;
-  onChannelHover?: (name: ElectrodeName | null) => void;
   onStartDemo?: () => void;
   onStartLive?: () => void;
   onTrialSelect?: (index: number, startOffset?: number) => void;
@@ -35,9 +33,7 @@ const Scene: React.FC<SceneProps> = ({
   frameRef,
   historiesRef,
   selectedChannel,
-  hoveredChannel,
   onChannelSelect,
-  onChannelHover,
   onStartDemo,
   onStartLive,
   onTrialSelect,
@@ -68,9 +64,7 @@ const Scene: React.FC<SceneProps> = ({
         frameRef={frameRef}
         historiesRef={historiesRef}
         selectedChannel={selectedChannel}
-        hoveredChannel={hoveredChannel}
         onChannelSelect={onChannelSelect}
-        onChannelHover={onChannelHover}
         onStartDemo={onStartDemo}
         onStartLive={onStartLive}
         onTrialSelect={onTrialSelect}
