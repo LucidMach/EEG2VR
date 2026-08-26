@@ -1,4 +1,5 @@
 import React from "react";
+import * as THREE from "three";
 import type { ElectrodeName, Frame } from "../../utils/signalSource";
 import type { HistorySample } from "../../hooks/usePlaybackEngine";
 import { useConsoleSnapshot } from "./useConsoleSnapshot";
@@ -11,6 +12,7 @@ interface XRConsoleProps {
   frameRef: React.RefObject<Frame>;
   historiesRef?: React.RefObject<Record<ElectrodeName, HistorySample[]>>;
   selectedChannel: ElectrodeName | null;
+  hoveredChannel?: ElectrodeName | null;
   onChannelSelect?: (name: ElectrodeName) => void;
   onChannelHover?: (name: ElectrodeName | null) => void;
   onStartDemo?: () => void;
@@ -22,12 +24,17 @@ interface XRConsoleProps {
   speed?: number;
   isPaused?: boolean;
   audioError?: boolean;
+  headPositionRef?: React.RefObject<THREE.Vector3>;
+  headRotationRef?: React.RefObject<THREE.Quaternion>;
+  panelPositionRef?: React.RefObject<THREE.Vector3>;
+  panelRotationRef?: React.RefObject<THREE.Quaternion>;
 }
 
 const XRConsole: React.FC<XRConsoleProps> = ({
   frameRef,
   historiesRef,
   selectedChannel,
+  hoveredChannel,
   onChannelSelect,
   onChannelHover,
   onStartDemo,
@@ -39,6 +46,10 @@ const XRConsole: React.FC<XRConsoleProps> = ({
   speed = 1,
   isPaused = false,
   audioError = false,
+  headPositionRef,
+  headRotationRef,
+  panelPositionRef,
+  panelRotationRef,
 }) => {
   const snapshot = useConsoleSnapshot(frameRef, selectedChannel);
 
@@ -65,6 +76,7 @@ const XRConsole: React.FC<XRConsoleProps> = ({
         frameRef={frameRef}
         historiesRef={historiesRef}
         selectedChannel={selectedChannel}
+        hoveredChannel={hoveredChannel}
         onChannelSelect={onChannelSelect}
         onChannelHover={onChannelHover}
       />
@@ -80,9 +92,14 @@ const XRConsole: React.FC<XRConsoleProps> = ({
         onSetSpeed={onSetSpeed}
         onExitXR={onExitXR}
         audioError={audioError}
+        headPositionRef={headPositionRef}
+        headRotationRef={headRotationRef}
+        panelPositionRef={panelPositionRef}
+        panelRotationRef={panelRotationRef}
       />
     </group>
   );
 };
 
 export default XRConsole;
+

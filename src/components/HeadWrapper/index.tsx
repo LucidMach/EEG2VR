@@ -1,11 +1,5 @@
-// Dynamically adapts the digital twin's position/scale/rotation for 2D vs.
-// WebXR presentation, and hosts the floating XR console alongside it.
-//
-// Frame data arrives via a ref so this subtree can be memoized upstream and
-// stay off the 20 Hz React re-render path — useHeadPlacement's useFrame loop
-// reads the latest frame each three.js frame.
 import * as THREE from "three";
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import EEGHead from "../eegHead";
 import XRConsole from "../XRConsole";
@@ -13,12 +7,15 @@ import type { ElectrodeName, Frame } from "../../utils/signalSource";
 import type { HistorySample } from "../../hooks/usePlaybackEngine";
 import { useXRDragInteraction } from "./useXRDragInteraction";
 import { useHeadPlacement } from "./useHeadPlacement";
+import { resolveHeadPosition } from "./spatialCollision";
 
 interface HeadWrapperProps {
   frameRef: React.RefObject<Frame>;
   historiesRef?: React.RefObject<Record<ElectrodeName, HistorySample[]>>;
   selectedChannel: ElectrodeName | null;
+  hoveredChannel?: ElectrodeName | null;
   onChannelSelect: (name: ElectrodeName) => void;
+  onChannelHover?: (name: ElectrodeName | null) => void;
   onStartDemo?: () => void;
   onStartLive?: () => void;
   onTrialSelect?: (index: number, startOffset?: number) => void;
@@ -34,7 +31,9 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
   frameRef,
   historiesRef,
   selectedChannel,
+  hoveredChannel,
   onChannelSelect,
+  onChannelHover,
   onStartDemo,
   onStartLive,
   onTrialSelect,
@@ -47,10 +46,22 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
 }) => {
   const { gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
-  const [hoveredChannel, setHoveredChannel] = useState<ElectrodeName | null>(null);
+
+  const panelPositionRef = useRef(new THREE.Vector3(0, 0.82, -1.05));
+  const panelRotationRef = useRef(
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 6, 0, 0))
+  );
 
   const { isDraggingRef, xrPositionRef, xrRotationRef, handlePointerDown, handlePointerMove, handlePointerUp } =
-    useXRDragInteraction({ gl, groupRef });
+    useXRDragInteraction({
+      gl,
+      groupRef,
+      initialPosition: [0, 1.3, -1.1],
+      initialRotation: [0, 0, 0],
+      constrainPosition: (targetPos, targetQuat) => {
+        resolveHeadPosition(targetPos, targetQuat, panelPositionRef.current, panelRotationRef.current);
+      },
+    });
 
   useHeadPlacement({ groupRef, frameRef, isDraggingRef, xrPositionRef, xrRotationRef });
 
@@ -71,7 +82,7 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
           selectedChannel={selectedChannel}
           hoveredChannel={hoveredChannel}
           onChannelSelect={onChannelSelect}
-          onChannelHover={setHoveredChannel}
+          onChannelHover={onChannelHover}
           rotation={[Math.PI / 32, 0, 0]}
         />
       </group>
@@ -80,8 +91,9 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
         frameRef={frameRef}
         historiesRef={historiesRef}
         selectedChannel={selectedChannel}
+        hoveredChannel={hoveredChannel}
         onChannelSelect={onChannelSelect}
-        onChannelHover={setHoveredChannel}
+        onChannelHover={onChannelHover}
         onStartDemo={onStartDemo}
         onStartLive={onStartLive}
         onTrialSelect={onTrialSelect}
@@ -91,9 +103,14 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
         speed={speed}
         isPaused={isPaused}
         audioError={audioError}
+        headPositionRef={xrPositionRef}
+        headRotationRef={xrRotationRef}
+        panelPositionRef={panelPositionRef}
+        panelRotationRef={panelRotationRef}
       />
     </group>
   );
 };
 
 export default HeadWrapper;
+

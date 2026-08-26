@@ -1,7 +1,9 @@
 import * as THREE from "three";
-import React, { useRef } from "react";
-import { useFrame, type ThreeEvent } from "@react-three/fiber";
+import React, { useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import type { ThreeEvent } from "@react-three/fiber";
 import { ELECTRODE_METADATA, type ElectrodeName } from "../../utils/signalSource";
+import { REGION_COLOR } from "../../utils/electrodeVisualState";
 import { triggerXRHaptic } from "../../utils/xrHaptics";
 
 interface ElectrodeNodeProps {
@@ -16,17 +18,12 @@ interface ElectrodeNodeProps {
   onHover?: (name: ElectrodeName | null) => void;
 }
 
-const REGION_HALO_COLORS: Record<string, string> = {
-  Frontal: "#818cf8",   // Indigo
-  Temporal: "#c084fc",  // Purple
-  Central: "#60a5fa",   // Blue
-  Parietal: "#22d3ee",   // Cyan
-  Occipital: "#34d399", // Emerald
-};
-
-// One interactive LED sensor mesh on the digital twin.
-// Color/intensity/opacity are animated externally (see EEGHead's useFrame),
-// and when selected or hovered, renders an animated, luminous halo aura.
+// Interactive LED sensor mesh on the digital twin. Its material's
+// color/intensity/opacity are animated externally (see EEGHead's useFrame),
+// which is why the mesh registers itself via `onRef`.
+//
+// When selected (or hovered), renders a concentric 3D glowing torus collar
+// and halo ring around the sensor base with cortical region-themed illumination.
 const ElectrodeNode: React.FC<ElectrodeNodeProps> = ({
   name,
   geometry,
@@ -38,22 +35,51 @@ const ElectrodeNode: React.FC<ElectrodeNodeProps> = ({
   onSelect,
   onHover,
 }) => {
-  const haloShellRef = useRef<THREE.Mesh>(null);
-  const haloOuterRef = useRef<THREE.Mesh>(null);
-  const haloMatRef = useRef<THREE.MeshBasicMaterial>(null);
-  const haloOuterMatRef = useRef<THREE.MeshBasicMaterial>(null);
+  const ringGroupRef = useRef<THREE.Group>(null);
 
-  const meta = ELECTRODE_METADATA[name];
-  const haloColor = (meta && REGION_HALO_COLORS[meta.region]) || "#38bdf8";
+  const { radius, ringRotation } = useMemo(() => {
+    if (!geometry.boundingSphere) {
+      geometry.computeBoundingSphere();
+    }
+    if (!geometry.boundingBox) {
+      geometry.computeBoundingBox();
+    }
+    const r = geometry.boundingSphere?.radius ?? 0.8;
+    const bb = geometry.boundingBox;
+    let rot: [number, number, number] = [0, 0, 0];
+    if (bb) {
+      const dx = bb.max.x - bb.min.x;
+      const dy = bb.max.y - bb.min.y;
+      const dz = bb.max.z - bb.min.z;
+      // If the dome axis is Y (min dimension is dy), rotate ring to lie in XZ plane
+      if (dy < dx && dy < dz) {
+        rot = [Math.PI / 2, 0, 0];
+      } else if (dx < dy && dx < dz) {
+        // If dome axis is X, rotate ring to lie in YZ plane
+        rot = [0, Math.PI / 2, 0];
+      }
+    }
+    return { radius: r, ringRotation: rot };
+  }, [geometry]);
 
-  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
+  const region = ELECTRODE_METADATA[name]?.region;
+  const ringColor = (region && REGION_COLOR[region]) || "#38bdf8";
+
+  useFrame((state) => {
+    if (!ringGroupRef.current) return;
+    if (isSelected) {
+      const time = state.clock.getElapsedTime();
+      const pulse = Math.sin(time * 5);
+      const s = 1.0 + 0.05 * pulse;
+      ringGroupRef.current.scale.set(s, s, s);
+    } else {
+      ringGroupRef.current.scale.set(1, 1, 1);
+    }
+  });
+
+  const handleClick = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     triggerXRHaptic(e, 0.5, 25);
-    onSelect?.(name);
-  };
-
-  const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
     onSelect?.(name);
   };
 
@@ -68,46 +94,17 @@ const ElectrodeNode: React.FC<ElectrodeNodeProps> = ({
     onHover?.(null);
   };
 
-  // Subtle breathing pulse for active halo aura
-  useFrame((state) => {
-    if (!isSelected && !isHovered) return;
-    const time = state.clock.getElapsedTime();
-    const pulse = Math.sin(time * 3.5);
-
-    if (haloShellRef.current) {
-      const baseScale = isSelected ? 2.6 : 2.35;
-      const pulseDelta = isSelected ? 0.12 * pulse : 0.04 * pulse;
-      haloShellRef.current.scale.setScalar(baseScale + pulseDelta);
-    }
-
-    if (haloOuterRef.current) {
-      const baseOuterScale = isSelected ? 3.1 : 2.7;
-      const pulseDelta = isSelected ? 0.2 * pulse : 0.06 * pulse;
-      haloOuterRef.current.scale.setScalar(baseOuterScale + pulseDelta);
-    }
-
-    if (haloMatRef.current) {
-      const baseOpacity = isSelected ? 0.65 : 0.3;
-      haloMatRef.current.opacity = baseOpacity + (isSelected ? 0.2 * pulse : 0.08 * pulse);
-    }
-
-    if (haloOuterMatRef.current) {
-      const baseOpacity = isSelected ? 0.25 : 0.1;
-      haloOuterMatRef.current.opacity = baseOpacity + (isSelected ? 0.1 * pulse : 0.03 * pulse);
-    }
-  });
-
   return (
     <group position={position} rotation={rotation}>
-      {/* 1. Base LED Sensor Mesh */}
+      {/* 1. Base Electrode Sensor LED Hemisphere */}
       <mesh
         castShadow
         receiveShadow
         geometry={geometry}
         scale={2.1}
         ref={(el) => onRef(name, el)}
-        onPointerDown={handlePointerDown}
         onClick={handleClick}
+        onPointerDown={handleClick}
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
       >
@@ -122,55 +119,38 @@ const ElectrodeNode: React.FC<ElectrodeNodeProps> = ({
         />
       </mesh>
 
-      {/* 2. Inner Glowing Halo Shell */}
+      {/* 2. Concentric Highlight Ring (Active Selection / Hover Preview) */}
       {(isSelected || isHovered) && (
-        <mesh
-          ref={haloShellRef}
-          geometry={geometry}
-          scale={isSelected ? 2.6 : 2.35}
-          raycast={() => null}
-        >
-          <meshBasicMaterial
-            ref={haloMatRef}
-            color={haloColor}
-            transparent
-            opacity={isSelected ? 0.65 : 0.3}
-            depthWrite={false}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-      )}
+        <group ref={ringGroupRef} rotation={ringRotation} scale={2.1}>
+          {/* 3D Glowing Torus Collar surrounding the LED base */}
+          <mesh raycast={() => null}>
+            <torusGeometry args={[radius * 1.06, radius * 0.1, 16, 32]} />
+            <meshStandardMaterial
+              color={ringColor}
+              emissive={ringColor}
+              emissiveIntensity={isSelected ? 1.6 : 0.7}
+              roughness={0.1}
+              metalness={0.2}
+              transparent
+              opacity={isSelected ? 0.95 : 0.6}
+            />
+          </mesh>
 
-      {/* 3. Outer Radiant Aura Corona Shell */}
-      {(isSelected || isHovered) && (
-        <mesh
-          ref={haloOuterRef}
-          geometry={geometry}
-          scale={isSelected ? 3.1 : 2.7}
-          raycast={() => null}
-        >
-          <meshBasicMaterial
-            ref={haloOuterMatRef}
-            color={haloColor}
-            transparent
-            opacity={isSelected ? 0.25 : 0.1}
-            depthWrite={false}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-      )}
-
-      {/* 4. Local Illuminating Point Light for Selected State */}
-      {isSelected && (
-        <pointLight
-          color={haloColor}
-          intensity={1.2}
-          distance={2.5}
-          decay={2}
-        />
+          {/* Outer glowing halo ring aura */}
+          <mesh raycast={() => null}>
+            <ringGeometry args={[radius * 1.14, radius * 1.42, 32]} />
+            <meshBasicMaterial
+              color={ringColor}
+              side={THREE.DoubleSide}
+              transparent
+              opacity={isSelected ? 0.55 : 0.28}
+              depthWrite={false}
+            />
+          </mesh>
+        </group>
       )}
     </group>
   );
 };
 
-export default ElectrodeNode;
+export default React.memo(ElectrodeNode);

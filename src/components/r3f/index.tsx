@@ -16,7 +16,7 @@ const Scene = lazy(() => import("../Scene"));
 
 const R3F: React.FC = () => {
   const engine = usePlaybackEngine();
-  const [hoveredChannel] = useState<ElectrodeName | null>(null);
+  const [hoveredChannel, setHoveredChannel] = useState<ElectrodeName | null>(null);
   const isIdle = engine.mode.kind === "idle";
 
   useSpacebarToggle(engine.togglePlayPause);
@@ -27,6 +27,7 @@ const R3F: React.FC = () => {
         historiesRef={engine.historiesRef}
         frameRef={engine.frameRef}
         selectedChannel={engine.selectedChannel}
+        hoveredChannel={hoveredChannel}
       />
 
       {/* ======================================================== */}
@@ -47,7 +48,9 @@ const R3F: React.FC = () => {
               frameRef={engine.frameRef}
               historiesRef={engine.historiesRef}
               selectedChannel={engine.selectedChannel}
+              hoveredChannel={hoveredChannel}
               onChannelSelect={engine.selectChannel}
+              onChannelHover={setHoveredChannel}
               onStartDemo={engine.startDemo}
               onStartLive={engine.startLive}
               onTrialSelect={engine.selectTrial}

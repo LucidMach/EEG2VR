@@ -14,6 +14,7 @@ interface DrawElectrodeLaneParams {
   mean: number;
   maxDeviation: number;
   isSelected: boolean;
+  isHovered?: boolean;
 }
 
 // Draws one electrode's baseline grid line, name label, and rolling
@@ -29,13 +30,24 @@ export function drawElectrodeLane({
   mean,
   maxDeviation,
   isSelected,
+  isHovered = false,
 }: DrawElectrodeLaneParams): void {
   const meta = ELECTRODE_METADATA[name];
   const centerY = laneCenterY(layout, idx);
   const { paddingLeft, drawWidth, width, laneHeight } = layout;
+  const laneY = centerY - laneHeight / 2;
+
+  // Background hover/selection tint
+  if (isSelected) {
+    ctx.fillStyle = "rgba(99, 102, 241, 0.08)";
+    ctx.fillRect(paddingLeft - 40, laneY + 1, width - paddingLeft + 30, laneHeight - 2);
+  } else if (isHovered) {
+    ctx.fillStyle = "rgba(241, 245, 249, 0.6)";
+    ctx.fillRect(paddingLeft - 40, laneY + 1, width - paddingLeft + 30, laneHeight - 2);
+  }
 
   ctx.beginPath();
-  ctx.strokeStyle = isSelected ? "rgba(99, 102, 241, 0.2)" : "rgba(0, 0, 0, 0.05)";
+  ctx.strokeStyle = isSelected ? "rgba(99, 102, 241, 0.2)" : isHovered ? "rgba(99, 102, 241, 0.12)" : "rgba(0, 0, 0, 0.05)";
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 6]);
   ctx.moveTo(paddingLeft, centerY);
@@ -43,8 +55,12 @@ export function drawElectrodeLane({
   ctx.stroke();
   ctx.setLineDash([]);
 
-  ctx.fillStyle = isSelected ? "rgba(79, 70, 229, 1.0)" : "rgba(71, 85, 105, 0.65)";
-  ctx.font = isSelected ? "bold 10px monospace" : "9px monospace";
+  ctx.fillStyle = isSelected
+    ? "rgba(79, 70, 229, 1.0)"
+    : isHovered
+    ? "rgba(67, 56, 202, 0.9)"
+    : "rgba(71, 85, 105, 0.65)";
+  ctx.font = isSelected || isHovered ? "bold 10px monospace" : "9px monospace";
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
   ctx.fillText(name, paddingLeft - 10, centerY);
@@ -53,9 +69,9 @@ export function drawElectrodeLane({
 
   ctx.beginPath();
   const color = REGION_RGBA[meta.region] || { r: 100, g: 116, b: 139 };
-  const opacity = isSelected ? 0.95 : 0.35;
+  const opacity = isSelected ? 0.95 : isHovered ? 0.75 : 0.35;
   ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${opacity})`;
-  ctx.lineWidth = isSelected ? 2.5 : 1.2;
+  ctx.lineWidth = isSelected ? 2.5 : isHovered ? 1.8 : 1.2;
 
   const step = drawWidth / (HISTORY_LIMIT - 1);
 

@@ -6,6 +6,7 @@ import type { Frame, ElectrodeName } from "../../../utils/signalSource";
 import { formatTime } from "../../TrialProgressBar/formatTime";
 import { createPillShape } from "../pillShape";
 import { useXRDragInteraction } from "../../HeadWrapper/useXRDragInteraction";
+import { resolvePanelPosition } from "../../HeadWrapper/spatialCollision";
 import { triggerXRHaptic } from "../../../utils/xrHaptics";
 import XRControlPill from "./XRControlPill";
 
@@ -19,6 +20,10 @@ interface XRControlBarProps {
   onSetSpeed?: (speed: number) => void;
   onExitXR?: () => void;
   audioError?: boolean;
+  headPositionRef?: React.RefObject<THREE.Vector3>;
+  headRotationRef?: React.RefObject<THREE.Quaternion>;
+  panelPositionRef?: React.RefObject<THREE.Vector3>;
+  panelRotationRef?: React.RefObject<THREE.Quaternion>;
 }
 
 const TOTAL_TRIALS = 40;
@@ -36,6 +41,10 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   onSetSpeed,
   onExitXR,
   audioError = false,
+  headPositionRef,
+  headRotationRef: _headRotationRef,
+  panelPositionRef,
+  panelRotationRef,
 }) => {
   const { gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
@@ -48,6 +57,13 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
       groupRef,
       initialPosition: [0, 0.82, -1.05],
       initialRotation: [-Math.PI / 6, 0, 0],
+      positionRef: panelPositionRef,
+      rotationRef: panelRotationRef,
+      constrainPosition: (targetPos, targetQuat) => {
+        if (headPositionRef?.current) {
+          resolvePanelPosition(targetPos, targetQuat, headPositionRef.current);
+        }
+      },
       onDragStart: (e) => {
         setIsDragging(true);
         triggerXRHaptic(e, 0.45, 20);

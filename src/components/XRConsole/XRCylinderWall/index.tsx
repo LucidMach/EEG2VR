@@ -12,6 +12,7 @@ interface XRCylinderWallProps {
   frameRef: React.RefObject<Frame>;
   historiesRef?: React.RefObject<Record<ElectrodeName, HistorySample[]>>;
   selectedChannel: ElectrodeName | null;
+  hoveredChannel?: ElectrodeName | null;
   onChannelSelect?: (name: ElectrodeName) => void;
   onChannelHover?: (name: ElectrodeName | null) => void;
   radius?: number;
@@ -24,16 +25,22 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
   frameRef,
   historiesRef,
   selectedChannel,
+  hoveredChannel,
   onChannelSelect,
   onChannelHover,
   radius = 3.6,
   height = 2.4,
 }) => {
   const hitAreasRef = useRef<CylinderChannelHitArea[]>([]);
-  const hoveredChannelRef = useRef<ElectrodeName | null>(null);
+  const hoveredChannelRef = useRef<ElectrodeName | null>(hoveredChannel ?? null);
   const reticleGroupRef = useRef<THREE.Group>(null);
   const hitPointRef = useRef<THREE.Vector3 | null>(null);
   const isHoveredRef = useRef<boolean>(false);
+
+  // Sync external hover state when not actively hovering locally
+  if (!isHoveredRef.current && hoveredChannelRef.current !== (hoveredChannel ?? null)) {
+    hoveredChannelRef.current = hoveredChannel ?? null;
+  }
 
   const { texture } = useXRCylinderTexture({
     frameRef,
@@ -85,7 +92,7 @@ export const XRCylinderWall: React.FC<XRCylinderWallProps> = ({
     }
   };
 
-  const handlePointerDown = (e: ThreeEvent<PointerEvent | MouseEvent>) => {
+  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     if (!e.uv) return;
 

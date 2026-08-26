@@ -3,9 +3,9 @@
 Wraps [[../eegHead/index|EEGHead]] with WebXR drag interaction and
 placement, and mounts [[../XRConsole/index|XRConsole]] alongside it.
 
-**Props**: `frameRef`, `historiesRef`, `selectedChannel`, `onChannelSelect`, `onStartDemo`, `onStartLive`, `onTrialSelect`, `onTogglePlayPause`, `onSetSpeed`, `speed`, `isPaused`.
+**Props**: `frameRef`, `historiesRef`, `selectedChannel`, `hoveredChannel`, `onChannelSelect`, `onChannelHover`, `onStartDemo`, `onStartLive`, `onTrialSelect`, `onTogglePlayPause`, `onSetSpeed`, `speed`, `isPaused`.
 
-Composed from [[useXRDragInteraction]] (pointer handlers + XR pose refs) and
+Composed from [[useXRDragInteraction]] (pointer handlers + XR pose refs),
 [[useHeadPlacement]] (the per-frame position/scale/rotation logic for both
-XR and 2D desktop presentation). Maintains `hoveredChannel` state across the XR monitor cylinder wall and digital twin headset to coordinate real-time preview and halo highlight effects.
+XR and 2D desktop presentation), and [[spatialCollision]] (analytical anti-overlap constraints preventing the digital twin headset and floating control panel from colliding or intersecting).
 

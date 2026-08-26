@@ -9,6 +9,9 @@ export interface XRDragInteractionParams {
   groupRef: React.RefObject<THREE.Group | null>;
   initialPosition?: THREE.Vector3 | [number, number, number];
   initialRotation?: THREE.Quaternion | THREE.Euler | [number, number, number];
+  positionRef?: React.RefObject<THREE.Vector3>;
+  rotationRef?: React.RefObject<THREE.Quaternion>;
+  constrainPosition?: (targetPos: THREE.Vector3, targetQuat: THREE.Quaternion) => void;
   onDragStart?: (e: ThreeEvent<PointerEvent>) => void;
   onDragEnd?: (e: ThreeEvent<PointerEvent>) => void;
 }
@@ -44,6 +47,9 @@ export function useXRDragInteraction({
   groupRef,
   initialPosition,
   initialRotation,
+  positionRef,
+  rotationRef,
+  constrainPosition,
   onDragStart,
   onDragEnd,
 }: XRDragInteractionParams) {
@@ -56,8 +62,11 @@ export function useXRDragInteraction({
   const dragStartQuatRef = useRef(new THREE.Quaternion());
   const dragOffsetRef = useRef(new THREE.Vector3());
   const dragDistanceRef = useRef(0);
-  const xrPositionRef = useRef(defaultPos.clone());
-  const xrRotationRef = useRef(defaultQuat.clone());
+  const internalPositionRef = useRef(defaultPos.clone());
+  const internalRotationRef = useRef(defaultQuat.clone());
+
+  const xrPositionRef = positionRef ?? internalPositionRef;
+  const xrRotationRef = rotationRef ?? internalRotationRef;
   const wasPresentingRef = useRef(false);
 
   useFrame((state) => {
@@ -74,6 +83,7 @@ export function useXRDragInteraction({
     }
 
     if (groupRef.current && !isDraggingRef.current) {
+      constrainPosition?.(xrPositionRef.current, xrRotationRef.current);
       groupRef.current.position.copy(xrPositionRef.current);
       groupRef.current.quaternion.copy(xrRotationRef.current);
     }
@@ -117,12 +127,16 @@ export function useXRDragInteraction({
       .addScaledVector(e.ray.direction, dragDistanceRef.current)
       .add(_rotatedOffset);
 
+    _newQuat.multiplyQuaternions(_qDiff, dragStartQuatRef.current);
+
+    // Apply anti-overlap / collision constraints
+    constrainPosition?.(_newPos, _newQuat);
+
     // Only commit to full displacement if moved beyond small deadzone
     if (_newPos.distanceTo(xrPositionRef.current) > 0.015) {
       groupRef.current.position.copy(_newPos);
       xrPositionRef.current.copy(_newPos);
 
-      _newQuat.multiplyQuaternions(_qDiff, dragStartQuatRef.current);
       groupRef.current.quaternion.copy(_newQuat);
       xrRotationRef.current.copy(_newQuat);
     }

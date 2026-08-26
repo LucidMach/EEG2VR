@@ -18,7 +18,7 @@ const QUALITY_COLOR: Record<"good" | "fair" | "poor", string> = {
   poor: "#ff3333",
 };
 
-const REGION_COLOR: Record<string, string> = {
+export const REGION_COLOR: Record<string, string> = {
   Frontal: "#6366f1",   // Indigo
   Temporal: "#a855f7",  // Purple
   Central: "#3b82f6",   // Blue

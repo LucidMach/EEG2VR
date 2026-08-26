@@ -9,7 +9,8 @@ export function render(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
   histories: Record<ElectrodeName, HistorySample[]>,
-  selectedChannel: ElectrodeName | null
+  selectedChannel: ElectrodeName | null,
+  hoveredChannel: ElectrodeName | null = null
 ): void {
   const { width, height } = resizeCanvasToDisplaySize(canvas, ctx);
   const layout = computeLaneLayout(width, height, ELECTRODE_NAMES.length);
@@ -25,6 +26,7 @@ export function render(
       mean: means[name] ?? 0,
       maxDeviation,
       isSelected: name === selectedChannel,
+      isHovered: name === hoveredChannel,
     });
   });
 }

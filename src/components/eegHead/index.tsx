@@ -59,8 +59,8 @@ const EEGHead = forwardRef<THREE.Group, EEGHeadProps>(
               geometry={node.geometry}
               position={position}
               rotation={rotation}
-              isSelected={selectedChannel === name}
-              isHovered={hoveredChannel === name}
+              isSelected={name === selectedChannel}
+              isHovered={name === hoveredChannel}
               onRef={(chName, mesh) => {
                 if (mesh) meshRefs.current[chName] = mesh;
               }}

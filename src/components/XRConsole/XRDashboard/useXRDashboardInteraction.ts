@@ -1,13 +1,11 @@
 import { useRef } from "react";
 import type { ThreeEvent } from "@react-three/fiber";
-import type { ElectrodeName } from "../../../utils/signalSource";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "./renderDashboard";
 import type { InteractiveHitArea } from "./types";
 
 interface UseXRDashboardInteractionParams {
   hitAreasRef: React.RefObject<InteractiveHitArea[]>;
   onTrialSelect?: (index: number, startOffset?: number) => void;
-  onChannelSelect?: (name: ElectrodeName) => void;
   onTogglePlayPause?: () => void;
   onSetSpeed?: (speed: number) => void;
   onExitXR?: () => void;
@@ -17,7 +15,6 @@ interface UseXRDashboardInteractionParams {
 export function useXRDashboardInteraction({
   hitAreasRef,
   onTrialSelect,
-  onChannelSelect,
   onTogglePlayPause,
   onSetSpeed,
   onExitXR,
@@ -52,9 +49,7 @@ export function useXRDashboardInteraction({
 
     if (!match) return;
 
-    if (match.channelName) {
-      onChannelSelect?.(match.channelName);
-    } else if (match.trialIndex !== undefined) {
+    if (match.trialIndex !== undefined) {
       onTrialSelect?.(match.trialIndex, match.startOffset);
     } else if (match.type === "play-pause") {
       onTogglePlayPause?.();
