@@ -1,10 +1,12 @@
 // Composition root: wires the playback engine to the mode-derived layout and
 // renders whichever panels/overlays that layout calls for.
-import React, { Suspense, lazy } from "react";
+import React, { useState, Suspense, lazy } from "react";
 import { usePlaybackEngine } from "../../hooks/usePlaybackEngine";
+import type { ElectrodeName } from "../../utils/signalSource";
 import { IdleHeadline, IdleActions } from "../IdleSplash";
 import BackgroundOscilloscopes from "../BackgroundOscilloscopes";
 import { useSpacebarToggle } from "./useSpacebarToggle";
+import ChannelTooltip from "./ChannelTooltip";
 import AudioErrorToast from "./AudioErrorToast";
 import TopHudBar from "./TopHudBar";
 import LoadingOverlay from "./LoadingOverlay";
@@ -14,6 +16,7 @@ const Scene = lazy(() => import("../Scene"));
 
 const R3F: React.FC = () => {
   const engine = usePlaybackEngine();
+  const [hoveredChannel, setHoveredChannel] = useState<ElectrodeName | null>(null);
   const isIdle = engine.mode.kind === "idle";
 
   useSpacebarToggle(engine.togglePlayPause);
@@ -24,12 +27,14 @@ const R3F: React.FC = () => {
         historiesRef={engine.historiesRef}
         frameRef={engine.frameRef}
         selectedChannel={engine.selectedChannel}
+        hoveredChannel={hoveredChannel}
       />
 
       {/* ======================================================== */}
       {/* 3D VIEWPORT: CENTER SECTION                             */}
       {/* ======================================================== */}
       <div className="flex-1 flex flex-col relative bg-transparent">
+        {!isIdle && hoveredChannel && <ChannelTooltip channel={hoveredChannel} frame={engine.frame} />}
         {engine.audioError && <AudioErrorToast />}
         {!isIdle && <TopHudBar engine={engine} />}
 
@@ -43,7 +48,9 @@ const R3F: React.FC = () => {
               frameRef={engine.frameRef}
               historiesRef={engine.historiesRef}
               selectedChannel={engine.selectedChannel}
+              hoveredChannel={hoveredChannel}
               onChannelSelect={engine.selectChannel}
+              onChannelHover={setHoveredChannel}
               onStartDemo={engine.startDemo}
               onStartLive={engine.startLive}
               onTrialSelect={engine.selectTrial}

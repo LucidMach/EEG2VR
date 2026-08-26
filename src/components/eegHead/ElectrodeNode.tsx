@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import { ELECTRODE_METADATA, type ElectrodeName } from "../../utils/signalSource";
@@ -37,7 +37,7 @@ const ElectrodeNode: React.FC<ElectrodeNodeProps> = ({
 }) => {
   const ringGroupRef = useRef<THREE.Group>(null);
 
-  const { ringRotation, torusGeo, ringGeo } = useMemo(() => {
+  const { radius, ringRotation } = useMemo(() => {
     if (!geometry.boundingSphere) {
       geometry.computeBoundingSphere();
     }
@@ -59,63 +59,22 @@ const ElectrodeNode: React.FC<ElectrodeNodeProps> = ({
         rot = [0, Math.PI / 2, 0];
       }
     }
-    const tGeo = new THREE.TorusGeometry(r * 1.06, r * 0.1, 16, 32);
-    const rGeo = new THREE.RingGeometry(r * 1.14, r * 1.42, 32);
-    return { ringRotation: rot, torusGeo: tGeo, ringGeo: rGeo };
+    return { radius: r, ringRotation: rot };
   }, [geometry]);
 
   const region = ELECTRODE_METADATA[name]?.region;
   const ringColor = (region && REGION_COLOR[region]) || "#38bdf8";
 
-  const torusMat = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
-      color: ringColor,
-      emissive: ringColor,
-      emissiveIntensity: 0.7,
-      roughness: 0.1,
-      metalness: 0.2,
-      transparent: true,
-      opacity: 0.6,
-    });
-  }, [ringColor]);
-
-  const ringMat = useMemo(() => {
-    return new THREE.MeshBasicMaterial({
-      color: ringColor,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.28,
-      depthWrite: false,
-    });
-  }, [ringColor]);
-
-  useEffect(() => {
-    torusMat.emissiveIntensity = isSelected ? 1.6 : 0.7;
-    torusMat.opacity = isSelected ? 0.95 : 0.6;
-    ringMat.opacity = isSelected ? 0.55 : 0.28;
-  }, [isSelected, torusMat, ringMat]);
-
-  useEffect(() => {
-    if (!isSelected && ringGroupRef.current) {
-      ringGroupRef.current.scale.set(2.1, 2.1, 2.1);
-    }
-  }, [isSelected]);
-
-  useEffect(() => {
-    return () => {
-      torusGeo.dispose();
-      ringGeo.dispose();
-      torusMat.dispose();
-      ringMat.dispose();
-    };
-  }, [torusGeo, ringGeo, torusMat, ringMat]);
-
   useFrame((state) => {
-    if (!isSelected || !ringGroupRef.current) return;
-    const time = state.clock.getElapsedTime();
-    const pulse = Math.sin(time * 5);
-    const s = 2.1 * (1.0 + 0.05 * pulse);
-    ringGroupRef.current.scale.set(s, s, s);
+    if (!ringGroupRef.current) return;
+    if (isSelected) {
+      const time = state.clock.getElapsedTime();
+      const pulse = Math.sin(time * 5);
+      const s = 1.0 + 0.05 * pulse;
+      ringGroupRef.current.scale.set(s, s, s);
+    } else {
+      ringGroupRef.current.scale.set(1, 1, 1);
+    }
   });
 
   const handleClick = (e: ThreeEvent<PointerEvent>) => {
@@ -161,18 +120,35 @@ const ElectrodeNode: React.FC<ElectrodeNodeProps> = ({
       </mesh>
 
       {/* 2. Concentric Highlight Ring (Active Selection / Hover Preview) */}
-      <group
-        ref={ringGroupRef}
-        rotation={ringRotation}
-        scale={2.1}
-        visible={isSelected || isHovered}
-      >
-        {/* 3D Glowing Torus Collar surrounding the LED base */}
-        <mesh geometry={torusGeo} material={torusMat} raycast={() => null} />
+      {(isSelected || isHovered) && (
+        <group ref={ringGroupRef} rotation={ringRotation} scale={2.1}>
+          {/* 3D Glowing Torus Collar surrounding the LED base */}
+          <mesh raycast={() => null}>
+            <torusGeometry args={[radius * 1.06, radius * 0.1, 16, 32]} />
+            <meshStandardMaterial
+              color={ringColor}
+              emissive={ringColor}
+              emissiveIntensity={isSelected ? 1.6 : 0.7}
+              roughness={0.1}
+              metalness={0.2}
+              transparent
+              opacity={isSelected ? 0.95 : 0.6}
+            />
+          </mesh>
 
-        {/* Outer glowing halo ring aura */}
-        <mesh geometry={ringGeo} material={ringMat} raycast={() => null} />
-      </group>
+          {/* Outer glowing halo ring aura */}
+          <mesh raycast={() => null}>
+            <ringGeometry args={[radius * 1.14, radius * 1.42, 32]} />
+            <meshBasicMaterial
+              color={ringColor}
+              side={THREE.DoubleSide}
+              transparent
+              opacity={isSelected ? 0.55 : 0.28}
+              depthWrite={false}
+            />
+          </mesh>
+        </group>
+      )}
     </group>
   );
 };
