@@ -26,10 +26,11 @@ export const XRAudioErrorAlert: React.FC<XRAudioErrorAlertProps> = ({ audioError
 
   if (!audioError) return null;
 
-  // Sits just above XRControlBar's top edge (centered at y=1.02, height
-  // 0.31 → top ~1.15) under the digital twin (base y=1.30).
+  // Sits just above XRControlBar's top edge (centered at y=0.82, height
+  // 0.31 → top ~0.975) so it stays inside the console's natural viewing
+  // cluster (0.72–0.82) instead of floating a meter above the digital twin.
   return (
-    <group position={[0, 1.20, -1.05]} rotation={[-Math.PI / 6, 0, 0]}>
+    <group position={[0, 1.06, -1.05]} rotation={[-Math.PI / 6, 0, 0]}>
       {/* 1. Frosted Translucent Alert Card Backing */}
       <mesh position={[0, 0, -0.004]}>
         <shapeGeometry args={[pillShape]} />
