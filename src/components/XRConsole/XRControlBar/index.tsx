@@ -81,7 +81,7 @@ export const XRControlBar: React.FC<XRControlBarProps> = ({
   const barHeight = 0.008;
 
   return (
-    <group position={[0, 0.82, -1.05]} rotation={[-Math.PI / 6, 0, 0]}>
+    <group position={[0, 1.02, -1.05]} rotation={[-Math.PI / 6, 0, 0]}>
       {/* 1. Frosted Translucent Backing Card for High Contrast */}
       <mesh position={[0, 0, -0.006]}>
         <shapeGeometry args={[cardShape]} />
