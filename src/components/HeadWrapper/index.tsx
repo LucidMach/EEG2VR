@@ -9,11 +9,9 @@ import React, { useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import EEGHead from "../eegHead";
 import XRConsole from "../XRConsole";
-import DragAffordance from "./DragAffordance";
 import type { ElectrodeName, Frame } from "../../utils/signalSource";
 import type { HistorySample } from "../../hooks/usePlaybackEngine";
 import { useXRDragInteraction } from "./useXRDragInteraction";
-import { useHeadHoverAffordance } from "./useHeadHoverAffordance";
 import { useHeadPlacement } from "./useHeadPlacement";
 
 interface HeadWrapperProps {
@@ -52,8 +50,6 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
 
   const { isDraggingRef, xrPositionRef, xrRotationRef, handlePointerDown, handlePointerMove, handlePointerUp } =
     useXRDragInteraction({ gl, groupRef });
-  const { hoveredRef, hasDraggedRef, onPointerDown, onPointerOver, onPointerOut } =
-    useHeadHoverAffordance(handlePointerDown);
 
   useHeadPlacement({ groupRef, frameRef, isDraggingRef, xrPositionRef, xrRotationRef });
 
@@ -64,11 +60,9 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
   return (
     <group>
       <group
-        onPointerDown={onPointerDown}
+        onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerOver={onPointerOver}
-        onPointerOut={onPointerOut}
       >
         <EEGHead
           ref={groupRef}
@@ -78,7 +72,6 @@ const HeadWrapper: React.FC<HeadWrapperProps> = ({
           rotation={[Math.PI / 32, 0, 0]}
         />
       </group>
-      <DragAffordance groupRef={groupRef} hoveredRef={hoveredRef} hasDraggedRef={hasDraggedRef} />
       {/* Render 3D Spatial Dashboard in WebXR Mode only */}
       <XRConsole
         frameRef={frameRef}
